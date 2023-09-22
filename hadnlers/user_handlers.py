@@ -15,17 +15,14 @@ from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
 
 from aiogram.fsm.storage.memory import MemoryStorage
+
+#загрузка сценария шагов по сценарию "Определить убедждение \ загон"
+from states.define_belif import FSMQuestionForm
+
 # import keyboards
 
 router = Router()
 new_data = {}
-class FSMQuestionForm(StatesGroup):
-    fill_answer_problem = State()
-    fill_emotions_state = State()
-    fill_fear_reason_state = State()
-    fill_worst_scenario = State()
-    fill_desirable_emotion_state = State()
-    fill_analysis_state = State()
 
 @router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext):
