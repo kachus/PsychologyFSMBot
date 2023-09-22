@@ -1,3 +1,5 @@
+#Все хэндлеры с командами тут
+#______________________________________________
 
 from aiogram.filters import Command, CommandStart
 
@@ -8,11 +10,12 @@ from aiogram.types import Message
 from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
 
+#загрузка сценария шагов по сценарию "Определить убедждение"
 from states.define_belif import FSMQuestionForm
 
 router = Router()
 
-#загрузка сценария шагов по сценарию "Определить убедждение \ загон"
+
 @router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext):
     await state.set_state(FSMQuestionForm.fill_answer_problem)
