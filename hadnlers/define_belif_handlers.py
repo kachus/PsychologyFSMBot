@@ -1,7 +1,6 @@
 #Сценарий определения убеждения.
 #___________________________________________________________
 
-from aiogram.filters import Command, CommandStart
 
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
@@ -18,6 +17,7 @@ from aiogram import Bot, F, Router, html
 
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from services.save_info import save_user_info
 #загрузка сценария шагов по сценарию "Определить убедждение \ загон"
 from states.define_belif import FSMQuestionForm
 
@@ -31,12 +31,11 @@ new_data = {}
 
 @router.message(FSMQuestionForm.fill_answer_problem)
 async def process_problem_command(message:Message, state: FSMContext):
-    print(new_data)
     await state.set_state(FSMQuestionForm.fill_emotions_state)
+    await save_user_info(message.from_user.id, 'emotions', message.text)
     await state.update_data(problem = message.text)
     await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
                          reply_markup=futher_or_back)
-
 
 @router.message(FSMQuestionForm.fill_emotions_state)
 async def process_emotion_command(message: Message, state: FSMContext):
@@ -96,11 +95,4 @@ async def process_analysis(message: Message, state: FSMContext):
 
 
 
-# @router.message(FSMQuestionForm.fill_answer_problem)
-# async def process_answer(message: Message, state : FSMContext):
-#     await state.set_state(FSMQuestionForm.fill_answer_problem)
-#     if message.text == "Дальше":
-#         await state.set_state(FSMQuestionForm.fill_emotions_state)
-#     else:
-#         with open ('result.txt', 'a') as f:
-#             f.write(message.text)
+

@@ -13,4 +13,3 @@ basic_keyboard.row(button_further, button_goback, width=2)
 
 futher_or_back: ReplyKeyboardMarkup = basic_keyboard.as_markup(one_time_keyboard=True,
                                                                resize_keyboard=True)
-

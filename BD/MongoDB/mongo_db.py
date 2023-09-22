@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+
+from environs import Env
 from mongoengine import connect, DoesNotExist
 
 from BD.MongoDB.mongo_enteties import Client
@@ -62,26 +64,17 @@ class MongoClientUserRepositoryORM:
 
 
 if __name__ == '__main__':
-    config: Config = load_config()
-    configs = load_config()
+
+    env = Env()
+    env.read_env('.')
     mongo_db = MongoDB(
-        bd_name=configs.Data_base.bd_name,
-        host=configs.Data_base.host,
-        port=int(configs.Data_base.port),
+        bd_name=env('DeleteBelif'),
+        host=env('localhost'),
+        port=int(env('27017')),
 
     )
 
-    #     cl_1 = Client(
-    #     telegram_id = 123,
-    #     name = 'джон',
-    #     date_of_first_using = '01.02.2023',
-    #     job = 'строитель',
-    #     date_of_review = '01.02.2023',
-    #     conversation = [
-    #                        {"role": "assistent", "content": "ответ на бла бла бла "}
-    #
-    #                    ],
-    # )
+
 
     user_repo = MongoClientUserRepositoryORM(mongo_db)
     # user_repo.save_answer(cl_1)

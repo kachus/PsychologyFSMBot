@@ -2,7 +2,7 @@ import asyncio
 from aiogram import Bot, Dispatcher
 import logging
 
-from hadnlers import define_belif_handlers, command_handlers
+from hadnlers import command_handlers, define_belif_handlers
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config_data.config import Config, load_config
@@ -46,3 +46,5 @@ if __name__ == '__main__':
         logger.error('Bot stopped!')
         # Выводим в консоль сообщение об ошибке,
         # если получены исключения KeyboardInterrupt или SystemExit
+
+
