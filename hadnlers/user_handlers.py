@@ -1,6 +1,7 @@
-from aiogram import Router, Dispatcher
+
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
+from services import save_info
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
 from aiogram.filters import Filter
@@ -18,7 +19,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # import keyboards
 
 router = Router()
-new_data = {}
+
+
 class FSMQuestionForm(StatesGroup):
     fill_answer_problem = State()
     fill_emotions_state = State()
@@ -30,14 +32,15 @@ class FSMQuestionForm(StatesGroup):
 @router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext):
     await state.set_state(FSMQuestionForm.fill_answer_problem)
+
     await message.answer('Привет! Этот бот поможет тебе разобраться'
                          'с проблемами! Опиши свою проблему в одном сообщении', reply_markup=futher_or_back)
 
 
 @router.message(FSMQuestionForm.fill_answer_problem)
 async def process_problem_command(message:Message, state: FSMContext):
-    print(new_data)
     await state.set_state(FSMQuestionForm.fill_emotions_state)
+    await save_info(message.from_user.id, 'emotions', message.text)
     await state.update_data(problem = message.text)
     await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
                          reply_markup=futher_or_back)
@@ -48,6 +51,7 @@ async def process_emotion_command(message: Message, state: FSMContext):
     await state.update_data(emotions = message.text)
     await state.set_state(FSMQuestionForm.fill_fear_reason_state)
     await message.reply('Чего ты боищься в этой ситуации?')
+
 
 @router.message(FSMQuestionForm.fill_fear_reason_state)
 async def process_fear_reason(message: Message, state: FSMContext):
