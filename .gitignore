@@ -1,2 +1,4 @@
 .env
 result.txt
+services/__pycache__/
+*.pyc
