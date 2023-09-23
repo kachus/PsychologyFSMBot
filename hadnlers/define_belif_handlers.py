@@ -12,6 +12,8 @@ from aiogram.types import (
     ReplyKeyboardRemove,
     CallbackQuery
 )
+
+from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
 from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
 
@@ -27,12 +29,13 @@ router = Router()
 new_data = {}
 
 
-
+#TODO: Сделать сценарий с выбор - Либо из списка готовых, либо свой.
+#TODO: На каждом шаге сохранять ответ или в конце ? Выбор: сделать сохранения всех ответов в конце + вывод.
 
 @router.message(FSMQuestionForm.fill_answer_problem)
 async def process_problem_command(message:Message, state: FSMContext):
     await state.set_state(FSMQuestionForm.fill_emotions_state)
-    await save_user_info(message.from_user.id, 'emotions', message.text)
+    # save_user_info(message.from_user.id, 'emotions', message.text)
     await state.update_data(problem = message.text)
     await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
                          reply_markup=futher_or_back)
@@ -80,9 +83,9 @@ async def process_analysis(message: Message, state: FSMContext):
     await message.reply("Спасибо!")
 
 
-#Конец сценария переходим к дркгому
+#Конец сценария переходим к дркгому и сохранения ответов в базу данных
 @router.message(FSMQuestionForm.fill_analysis_state, F.text.casefold()=="да")
-async def process_analysis(message: Message, state: FSMContext):
+async def process_analysis(message: Message, state: FSMContext, database:MongoClientUserRepositoryORM):
     await state.update_data(analysis= message.text)
     await state.clear()
     await message.reply("Тогда перейдем к более глубокой практике, которая позволит"
