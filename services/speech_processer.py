@@ -21,8 +21,3 @@ def speech_to_voice(file) -> str:
     except:
         print('could not transcibe audio')
         return False
-
-
-
-
-
