@@ -13,6 +13,8 @@ class ClientRepository(ABC):
     @abstractmethod
     def save_client_to_database(user: Client) -> None:
         """
+        Метод сохраняет нового пользователя в базу данных
+        Перед использованием нужно проверить пользвателя на наличие в базе данных по telegram id используя метод check_client_in_database
         Метод на вход принимает объект Client. Струкутру объекта смотреть в модуле mongo_enteties
         Поэтомк сначала необходимо инициализировать объект Client с полями:
             telegram_id = IntField(required=True)
