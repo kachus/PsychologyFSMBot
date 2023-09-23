@@ -18,7 +18,6 @@ class Psychologist(Document):
 class Answer(Document):
     question = StringField()
     scenario = StringField()
-    step = StringField()
     answer_date = DateTimeField
     client_answer = StringField()
 

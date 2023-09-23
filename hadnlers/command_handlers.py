@@ -7,6 +7,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
 
 from aiogram.types import Message
+
+from BD.DBinterface import ClientRepository
 from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
 
@@ -17,7 +19,7 @@ router = Router()
 
 
 @router.message(CommandStart())
-async def command_start(message: Message, state: FSMContext):
+async def command_start(message: Message, state: FSMContext,data_base: ClientRepository):
     await state.set_state(FSMQuestionForm.fill_answer_problem)
     await message.answer('Привет! Этот бот поможет тебе разобраться'
                          'с проблемами! Опиши свою проблему в одном сообщении', reply_markup=futher_or_back)
