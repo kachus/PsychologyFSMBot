@@ -20,7 +20,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+*.pyc
+.idea
 result.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/

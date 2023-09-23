@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 import logging
-
+from BD.DBinterface import ClientRepository
 from hadnlers import command_handlers, define_belif_handlers
 from aiogram.fsm.storage.memory import MemoryStorage
 
@@ -27,7 +27,8 @@ async def main():
     storage: MemoryStorage = MemoryStorage()
 
     bot: Bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
-    dp: Dispatcher = Dispatcher()
+    dp = Dispatcher(data_base=ClientRepository)
+    # dp: Dispatcher = Dispatcher()
     dp.include_router(command_handlers.router)
     dp.include_router(define_belif_handlers.router)
     # register_all_handlers(dp)
