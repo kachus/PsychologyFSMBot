@@ -11,5 +11,12 @@ button_goback: KeyboardButton = KeyboardButton(text = LEXICON_RU['go_back'], cal
 basic_keyboard: ReplyKeyboardBuilder=ReplyKeyboardBuilder()
 basic_keyboard.row(button_further, button_goback, width=2)
 
-futher_or_back: ReplyKeyboardMarkup = basic_keyboard.as_markup(one_time_keyboard=True,
+futher_or_back: ReplyKeyboardMarkup = basic_keyboard.as_markup(
+                                                               resize_keyboard=True)
+
+button_start_define: KeyboardButton = KeyboardButton(text = 'Поехали 💥', callback_data='start_define_scenario')
+start_define_believes_kb: ReplyKeyboardBuilder = ReplyKeyboardBuilder()
+start_define_believes_kb.row(button_start_define)
+
+start_define_believes_kb: ReplyKeyboardBuilder = start_define_believes_kb.as_markup(one_time_keyboard=True,
                                                                resize_keyboard=True)

@@ -33,14 +33,39 @@ new_data = {}
 # TODO: Сделать сценарий с выбор - Либо из списка готовых, либо свой.
 # TODO: На каждом шаге сохранять ответ или в конце ? Выбор: сделать сохранения всех ответов в конце + вывод.
 
+
+@router.message(FSMQuestionForm.start_define_believes, F.text.startswith('Поехали'))
+async def start_define_believes_scenario(message: Message, state: FSMContext ):
+    await state.set_state(FSMQuestionForm.fill_answer_problem)
+    await message.answer('Теперь опиши проблему, с которой ты столкнулся', reply_markup=futher_or_back)
+
+
+@router.message(FSMQuestionForm.fill_answer_problem_substate)
+async def collect_problem(message:Message, state: FSMContext):
+    with open('voice_data.txt', 'a') as problem_file:
+        problem = message.text + '\n'
+        problem_file.write(problem)
+    await state.set_state(FSMQuestionForm.fill_answer_problem)
+
 # Передал в качетсве пример data_base: ClientRepository в функцию под хэндлером
-@router.message(FSMQuestionForm.fill_answer_problem)
+
+@router.message(FSMQuestionForm.fill_answer_problem, F.text.casefold()=='дальше')
 async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
     await state.set_state(FSMQuestionForm.fill_emotions_state)
     # save_user_info(message.from_user.id, 'emotions', message.text)
     await state.update_data(problem=message.text)
-    await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
+    await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу. Ты можешь написать несколько '
+                         'сообщений. Нажми "Дальеше", когда внесешь всю информацию и будешь готов перейти'
+                         'к следующему шагу',
                          reply_markup=futher_or_back)
+
+
+@router.message(FSMQuestionForm.fill_answer_problem)
+async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
+    with open('voice_data.txt', 'a') as problem_file:
+        # problem = await state.get_data()
+        problem_file.write(message.text)
+    await state.set_state(FSMQuestionForm.fill_answer_problem_substate)
 
 
 @router.message(FSMQuestionForm.fill_emotions_state)
