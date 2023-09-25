@@ -3,29 +3,30 @@ from dataclasses import dataclass
 from environs import Env
 from mongoengine import connect, DoesNotExist
 
-from BD.DBinterface import ClientRepository
-from BD.MongoDB.mongo_enteties import Client, Answer
-from config_data.config import load_config, Config
+from BD.DBinterface import ClientRepository, ProblemsRepository
+from BD.MongoDB.mongo_enteties import Client, Answer, Problem
+from config_data.config import load_config, Config, MongoDB
 
 
-@dataclass
-class MongoDB:
-    bd_name: str
-    host: str
-    port: int
-
-
-class MongoClientUserRepositoryORM(ClientRepository):
-
+class MongoORMConnection:
     def __init__(self, mongo: MongoDB):
         connect(db=mongo.bd_name,
                 host=mongo.host,
                 port=mongo.port)
 
+
+class MongoClientUserRepositoryORM(ClientRepository):
+
     @staticmethod
     def save_client_to_database(user: Client) -> None:
         user.save()
         print(f"пользователь c id: {Client.id}\nзанесен в базу \n {Client.objects}")
+
+    @staticmethod
+    def save_all_client_answers_by_id(user_telegram_id: int, answers:Answer) -> None:
+        user_to_update = Client.objects(telegram_id=user_telegram_id).get()
+        user_to_update.answers.append(answers)
+        user_to_update.save()
 
     @staticmethod
     def update_client_answer_by_chat_id(user_telegram_id: int, answer: Answer) -> None:
@@ -83,23 +84,34 @@ class MongoClientUserRepositoryORM(ClientRepository):
         ...
 
 
+class MongoProblemsRepositoryORM(ProblemsRepository):
+    def get_man_problems(self) -> list[Problem]:
+        return Problem.objects(sex="man")
+
+    def get_woman_problems(self) -> list[Problem]:
+        return Problem.objects(sex="woman")
+
+
 if __name__ == '__main__':
     env = Env()
-    env.read_env('.')
+    env.read_env()
     mongo_db = MongoDB(
-        bd_name=env('DeleteBelif'),
-        host=env('localhost'),
-        port=int(env('27017')),
+        bd_name=env('DATABASE'),
+        host=env('DB_HOST'),
+        port=int(env('DB_PORT')),
 
     )
-
-    user_repo = MongoClientUserRepositoryORM(mongo_db)
+    MongoORMConnection(mongo_db)
+    # user_repo = MongoClientUserRepositoryORM()
     # user_repo.save_answer(cl_1)
 
     print()
     # user_repo.save_answer(cl_1)
     # user_repo.update_user_answer_by_chatid(user_telegram_id=123, conversation=conversation)
     # data: Client = user_repo.retrieve_all_data_from_special_user_by_chatid(user_telegram_id=123)
-    print()
+
     # print(data.conversation)
     # print(user_repo.check_user_in_database(user_telegram_id=12))
+    a = MongoProblemsRepositoryORM().get_man_problems()
+    b = MongoProblemsRepositoryORM().get_woman_problems()
+    print()

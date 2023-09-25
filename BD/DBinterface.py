@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from BD.MongoDB.mongo_enteties import Client
+from BD.MongoDB.mongo_enteties import Client, Answer
 
 
 class ClientRepository(ABC):
@@ -8,6 +8,14 @@ class ClientRepository(ABC):
     Интерфейс основан на MongoClientUserRepositoryORM
     поэтому использую дополнительно декоратор @staticmethod чтобы небыло конфликта
     """
+
+    @staticmethod
+    @abstractmethod
+    def save_all_client_answers_by_id(user_telegram_id: int, answers:Answer) -> None:
+        """
+        Метод сохраняет все разговры клента
+        """
+        pass
 
     @staticmethod
     @abstractmethod
@@ -35,7 +43,7 @@ class ClientRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    def update_client_answer_by_chat_id( user_telegram_id: int, answer: dict) -> None:
+    def update_client_answer_by_chat_id(user_telegram_id: int, answer: dict) -> None:
         """
        Занести новые ответы в базу
        на вход принимает id telegramm пользователя и объект Answer c с полями:
@@ -67,4 +75,15 @@ class ClientRepository(ABC):
     @staticmethod
     @abstractmethod
     def retrieve_all_data_from_all_clients(self):
+        pass
+
+
+class ProblemsRepository(ABC):
+
+    @abstractmethod
+    def get_man_problems(self):
+        pass
+
+    @abstractmethod
+    def get_woman_problems(self):
         pass

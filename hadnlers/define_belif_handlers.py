@@ -1,6 +1,6 @@
 # Сценарий определения убеждения.
 # ___________________________________________________________
-
+import datetime
 
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
@@ -15,6 +15,7 @@ from aiogram.types import (
 
 from BD.DBinterface import ClientRepository
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
+from BD.MongoDB.mongo_enteties import Answer
 from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
 
@@ -93,6 +94,11 @@ async def process_analysis(message: Message, state: FSMContext):
 @router.message(FSMQuestionForm.fill_analysis_state, F.text.casefold() == "да")
 async def process_analysis(message: Message, state: FSMContext, data_base: ClientRepository):
     await state.update_data(analysis=message.text)
+    data_base.save_all_client_answers_by_id(message.chat.id,
+                                            Answer(scenario='define_problem',
+                                                   answer_date=datetime.datetime.now(),
+                                                   client_answers=await state.get_data(), ))
+
     await state.clear()
     await message.reply("Тогда перейдем к более глубокой практике, которая позволит"
                         "справиться со страхами")
