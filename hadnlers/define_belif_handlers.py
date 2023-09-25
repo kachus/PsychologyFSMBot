@@ -3,8 +3,10 @@
 
 
 from aiogram.fsm.context import FSMContext
+
 from aiogram.filters.state import State, StatesGroup
 from aiogram.filters import Filter
+
 from aiogram.types import (
     KeyboardButton,
     Message,
@@ -37,7 +39,10 @@ new_data = {}
 @router.message(FSMQuestionForm.start_define_believes, F.text.startswith('Поехали'))
 async def start_define_believes_scenario(message: Message, state: FSMContext ):
     await state.set_state(FSMQuestionForm.fill_answer_problem)
-    await message.answer('Теперь опиши проблему, с которой ты столкнулся', reply_markup=futher_or_back)
+    await message.answer('Теперь опиши проблему, с которой ты столкнулся.'
+                         'Ты можешь написать несколько '
+                         'сообщений. Нажми "Дальше", когда внесешь всю информацию и будешь готов перейти'
+                         'к следующему шагу', reply_markup=futher_or_back)
 
 
 @router.message(FSMQuestionForm.fill_answer_problem_substate)
@@ -45,6 +50,7 @@ async def collect_problem(message:Message, state: FSMContext):
     with open('voice_data.txt', 'a') as problem_file:
         problem = message.text + '\n'
         problem_file.write(problem)
+
     await state.set_state(FSMQuestionForm.fill_answer_problem)
 
 # Передал в качетсве пример data_base: ClientRepository в функцию под хэндлером
@@ -54,14 +60,15 @@ async def process_problem_command(message: Message, state: FSMContext, data_base
     await state.set_state(FSMQuestionForm.fill_emotions_state)
     # save_user_info(message.from_user.id, 'emotions', message.text)
     await state.update_data(problem=message.text)
-    await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу. Ты можешь написать несколько '
-                         'сообщений. Нажми "Дальеше", когда внесешь всю информацию и будешь готов перейти'
-                         'к следующему шагу',
+    await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
                          reply_markup=futher_or_back)
 
 
 @router.message(FSMQuestionForm.fill_answer_problem)
 async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
+    if message.voice:
+        pass #dowload file_id and create path here
+
     with open('voice_data.txt', 'a') as problem_file:
         # problem = await state.get_data()
         problem_file.write(message.text)
