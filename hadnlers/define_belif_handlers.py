@@ -13,7 +13,7 @@ from aiogram.types import (
     CallbackQuery
 )
 
-from BD.DBinterface import ClientRepository
+from BD.DBinterface import ClientRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
 from BD.MongoDB.mongo_enteties import Answer
 from keyboards.keyboard_ru import futher_or_back
@@ -22,6 +22,7 @@ from aiogram import Bot, F, Router, html
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from services.save_info import save_user_info
+from services.services import save_answer
 # загрузка сценария шагов по сценарию "Определить убедждение \ загон"
 from states.define_belif import FSMQuestionForm
 
@@ -92,12 +93,12 @@ async def process_analysis(message: Message, state: FSMContext):
 
 # Конец сценария переходим к дркгому и сохранения ответов в базу данных
 @router.message(FSMQuestionForm.fill_analysis_state, F.text.casefold() == "да")
-async def process_analysis(message: Message, state: FSMContext, data_base: ClientRepository):
+async def process_analysis(message: Message, state: FSMContext, data_base: MongoDataBaseRepositoryInterface):
     await state.update_data(analysis=message.text)
-    data_base.save_all_client_answers_by_id(message.chat.id,
-                                            Answer(scenario='define_problem',
-                                                   answer_date=datetime.datetime.now(),
-                                                   client_answers=await state.get_data(), ))
+    await save_answer(message=message,
+                      data_to_save=await state.get_data(),
+                      data_base=data_base
+                      )
 
     await state.clear()
     await message.reply("Тогда перейдем к более глубокой практике, которая позволит"

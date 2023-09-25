@@ -17,7 +17,7 @@ class Psychologist(Document):
 
 class Answer(Document):
     scenario = StringField()
-    answer_date = DateTimeField
+    answer_date = DateTimeField()
     client_answers = DictField()
 
 
@@ -31,7 +31,9 @@ class Client(Document):
     name = StringField()
     date_of_first_using = DateTimeField(required=True)
     date_of_last_visiting = DateTimeField()
-    answers = ListField(ReferenceField(Answer))  # Список с объектами Answers
+    # answers = ListField(Answer)  # Список с объектами Answers
+    answers = ListField()  # Список с объектами Answers
+
 
     meta = {
         'collection': 'Clients'  # Здесь указывается имя коллекции

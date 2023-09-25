@@ -11,7 +11,7 @@ class ClientRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    def save_all_client_answers_by_id(user_telegram_id: int, answers:Answer) -> None:
+    def save_all_client_answers_by_id(user_telegram_id: int, answers: Answer) -> None:
         """
         Метод сохраняет все разговры клента
         """
@@ -86,4 +86,14 @@ class ProblemsRepository(ABC):
 
     @abstractmethod
     def get_woman_problems(self):
+        pass
+
+
+class MongoDataBaseRepositoryInterface(ABC):
+    @abstractmethod
+    def client_repository(self):
+        pass
+
+    @abstractmethod
+    def problem_repository(self):
         pass

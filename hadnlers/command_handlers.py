@@ -9,7 +9,7 @@ from aiogram.filters.state import State, StatesGroup
 
 from aiogram.types import Message
 
-from BD.DBinterface import ClientRepository
+from BD.DBinterface import MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_enteties import Client
 from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
@@ -23,7 +23,7 @@ router = Router()
 
 @router.message(CommandStart())
 # data_base: ClientRepository
-async def command_start(message: Message, state: FSMContext, data_base: ClientRepository):
+async def command_start(message: Message, state: FSMContext, data_base:MongoDataBaseRepositoryInterface):
     await state.set_state(FSMQuestionForm.fill_answer_problem)
     # Если пользователя нет в базе данных, то сохраняем в БД
     await save_user_if_not_exist(message, data_base)

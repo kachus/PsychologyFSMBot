@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from environs import Env
 from mongoengine import connect, DoesNotExist
 
-from BD.DBinterface import ClientRepository, ProblemsRepository
+from BD.DBinterface import ClientRepository, ProblemsRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_enteties import Client, Answer, Problem
 from config_data.config import load_config, Config, MongoDB
 
@@ -23,7 +23,7 @@ class MongoClientUserRepositoryORM(ClientRepository):
         print(f"пользователь c id: {Client.id}\nзанесен в базу \n {Client.objects}")
 
     @staticmethod
-    def save_all_client_answers_by_id(user_telegram_id: int, answers:Answer) -> None:
+    def save_all_client_answers_by_id(user_telegram_id: int, answers: Answer) -> None:
         user_to_update = Client.objects(telegram_id=user_telegram_id).get()
         user_to_update.answers.append(answers)
         user_to_update.save()
@@ -92,6 +92,20 @@ class MongoProblemsRepositoryORM(ProblemsRepository):
         return Problem.objects(sex="woman")
 
 
+class MongoDataBaseRepository(MongoDataBaseRepositoryInterface):
+
+    def __init__(self, client_repository: MongoClientUserRepositoryORM,
+                 problem_repository: MongoProblemsRepositoryORM):
+        self.client_repository = client_repository
+        self.problem_repository = problem_repository
+
+    def client_repository(self):
+        return self.client_repository
+
+    def problem_repository(self):
+        return self.problem_repository
+
+
 if __name__ == '__main__':
     env = Env()
     env.read_env()
@@ -102,7 +116,7 @@ if __name__ == '__main__':
 
     )
     MongoORMConnection(mongo_db)
-    # user_repo = MongoClientUserRepositoryORM()
+    user_repo = MongoClientUserRepositoryORM()
     # user_repo.save_answer(cl_1)
 
     print()
@@ -112,6 +126,10 @@ if __name__ == '__main__':
 
     # print(data.conversation)
     # print(user_repo.check_user_in_database(user_telegram_id=12))
+    problem_orm = MongoProblemsRepositoryORM()
     a = MongoProblemsRepositoryORM().get_man_problems()
     b = MongoProblemsRepositoryORM().get_woman_problems()
+    data_base = MongoDataBaseRepositoryInterface(client_repository=user_repo,
+                            problem_repository=problem_orm)
+
     print()
