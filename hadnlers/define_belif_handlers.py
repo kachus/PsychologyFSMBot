@@ -59,9 +59,10 @@ async def process_voice_problem_command(message:Message, state: FSMContext):
     file_path = file.file_path
     file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
     await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    print(speech_to_voice_with_path(file_path=file_on_disk))
+    print(speech_to_voice_with_path(file_path=file_on_disk)) #FIXME добавить апдейт в бд текст из аудио
     "update data in db"
     os.remove(path=file_on_disk)
+
 
 # Передал в качетсве пример data_base: ClientRepository в функцию под хэндлером
 @router.message(FSMQuestionForm.fill_answer_problem, F.text==LEXICON_RU['further'])
