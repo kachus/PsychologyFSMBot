@@ -2,7 +2,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from BD.DBinterface import MongoDataBaseRepositoryInterface
-from BD.MongoDB.mongo_db import MongoProblemsRepositoryORM
 from BD.MongoDB.mongo_enteties import Problem
 
 
@@ -16,6 +15,6 @@ def create_problem_chose_keyboard(data_base_controller:MongoDataBaseRepositoryIn
             callback_data=str(button.problem).strip()[:30]
         ))
 
-    print()
+
     kp_builder.row(*buttons, width=1)
     return kp_builder.as_markup()

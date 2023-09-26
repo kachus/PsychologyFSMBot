@@ -28,9 +28,10 @@ async def command_start(message: Message, state: FSMContext, data_base:MongoData
     await state.set_state(FSMQuestionForm.fill_answer_problem)
     # Если пользователя нет в базе данных, то сохраняем в БД
     await save_user_if_not_exist(message, data_base)
-    #Вот тут добавил клавиатуру для теста
+    # Вот тут добавил клавиатуру для теста
     # keyboard = create_problem_chose_keyboard(data_base)
     # await message.answer("Тест клавы", reply_markup=keyboard)
     await message.answer('Привет! Этот бот поможет тебе разобраться'
                          'с проблемами! Опиши свою проблему в одном сообщении', reply_markup=futher_or_back)
+
 
