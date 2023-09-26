@@ -19,7 +19,8 @@ async def save_user_if_not_exist(message: Message, data_base: MongoDataBaseRepos
             if data_base.client_repository.check_client_in_database(message.chat.id):
                 print(f"Пользовтель c id: {message.chat.id,} \nименем: {message.from_user.first_name} добавлен в базу")
     except Exception as e:
-        print('что то не так с сохранением нового пользователя в базу данных')
+        print(e.message, e.args,
+              'что то не так с сохранением нового пользователя в базу данных')
 
 
 async def save_answer(message: Message,
@@ -35,6 +36,6 @@ async def save_answer(message: Message,
               f" {message.from_user.first_name} \n{message.chat.id} "
               f"\nСохранен в базу даных ")
     except Exception as e:
-        print(e, "\n что то пошло не так при сохранении ответа")
+        print(e.message, "\n что то пошло не так при сохранении ответа")
 
 

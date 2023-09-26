@@ -5,7 +5,7 @@ from mongoengine import connect, DoesNotExist
 
 from BD.DBinterface import ClientRepository, ProblemsRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_enteties import Client, Answer, Problem
-from config_data.config import load_config, Config, MongoDB
+from config_data.config import MongoDB
 
 
 class MongoORMConnection:
@@ -23,20 +23,18 @@ class MongoClientUserRepositoryORM(ClientRepository):
         print(f"пользователь c id: {Client.id}\nзанесен в базу \n {Client.objects}")
 
     @staticmethod
-    def save_all_client_answers_by_id(user_telegram_id: int, answers: Answer) -> None:
+    def save_all_client_answers_by_id(user_telegram_id: int, answers: dict) -> None:
         user_to_update = Client.objects(telegram_id=user_telegram_id).get()
         user_to_update.answers.append(answers)
         user_to_update.save()
 
     @staticmethod
-    def update_client_answer_by_chat_id(user_telegram_id: int, answer: Answer) -> None:
+    def update_client_answer_by_chat_id(user_telegram_id: int, answer: dict) -> None:
         """
         Занести новые ответы в базу
-        на вход принимает id telegramm пользователя и объект Answer c с полями:
-                question = StringField()
-                scenario = StringField()
-                answer_date = DateTimeField
-                client_answer = StringField()
+        на вход принимает id telegramm пользователя и словарь  dict['названия_сценария'] = {
+                'answer_date': datetime.now(),
+        '       client_answers': ответ от пользоваетяля }
         :param user_telegram_id:
         :param answer:
         :return:
@@ -106,30 +104,4 @@ class MongoDataBaseRepository(MongoDataBaseRepositoryInterface):
         return self.problem_repository
 
 
-if __name__ == '__main__':
-    env = Env()
-    env.read_env()
-    mongo_db = MongoDB(
-        bd_name=env('DATABASE'),
-        host=env('DB_HOST'),
-        port=int(env('DB_PORT')),
 
-    )
-    MongoORMConnection(mongo_db)
-    user_repo = MongoClientUserRepositoryORM()
-    # user_repo.save_answer(cl_1)
-
-    print()
-    # user_repo.save_answer(cl_1)
-    # user_repo.update_user_answer_by_chatid(user_telegram_id=123, conversation=conversation)
-    # data: Client = user_repo.retrieve_all_data_from_special_user_by_chatid(user_telegram_id=123)
-
-    # print(data.conversation)
-    # print(user_repo.check_user_in_database(user_telegram_id=12))
-    problem_orm = MongoProblemsRepositoryORM()
-    a = MongoProblemsRepositoryORM().get_man_problems()
-    b = MongoProblemsRepositoryORM().get_woman_problems()
-    data_base = MongoDataBaseRepositoryInterface(client_repository=user_repo,
-                            problem_repository=problem_orm)
-
-    print()

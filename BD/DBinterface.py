@@ -46,11 +46,9 @@ class ClientRepository(ABC):
     def update_client_answer_by_chat_id(user_telegram_id: int, answer: dict) -> None:
         """
        Занести новые ответы в базу
-       на вход принимает id telegramm пользователя и объект Answer c с полями:
-               question = StringField()
-               scenario = StringField()
-               answer_date = DateTimeField
-               client_answer = StringField()
+        на вход принимает id telegramm пользователя и словарь  dict['названия_сценария'] = {
+                'answer_date': datetime.now(),
+        '       client_answers': ответ от пользоваетяля }
        :param user_telegram_id:
        :param answer:
        :return:
