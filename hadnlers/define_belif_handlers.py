@@ -1,12 +1,13 @@
 # Сценарий определения убеждения.
 # ___________________________________________________________
+import os
 
-
+from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
 
 from aiogram.filters.state import State, StatesGroup
 from aiogram.filters import Filter
-
+from pathlib import Path
 from aiogram.types import (
     KeyboardButton,
     Message,
@@ -19,18 +20,19 @@ from BD.DBinterface import ClientRepository
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
 from keyboards.keyboard_ru import futher_or_back
 from aiogram import Bot, F, Router, html
-
+from config_data.config import load_config
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from services.save_info import save_user_info
+from services.speech_processer import speech_to_voice_with_path
 # загрузка сценария шагов по сценарию "Определить убедждение \ загон"
 from states.define_belif import FSMQuestionForm
 
 # import keyboards
 
 router = Router()
-new_data = {}
-
+config = load_config()
+bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 
 # TODO: Сделать сценарий с выбор - Либо из списка готовых, либо свой.
 # TODO: На каждом шаге сохранять ответ или в конце ? Выбор: сделать сохранения всех ответов в конце + вывод.
@@ -44,35 +46,45 @@ async def start_define_believes_scenario(message: Message, state: FSMContext ):
                          'сообщений. Нажми "Дальше", когда внесешь всю информацию и будешь готов перейти'
                          'к следующему шагу', reply_markup=futher_or_back)
 
-
-@router.message(FSMQuestionForm.fill_answer_problem_substate)
-async def collect_problem(message:Message, state: FSMContext):
-    with open('voice_data.txt', 'a') as problem_file:
-        problem = message.text + '\n'
-        problem_file.write(problem)
-
+@router.message(FSMQuestionForm.fill_answer_problem, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
+async def process_voice_problem_command(message:Message, state: FSMContext):
     await state.set_state(FSMQuestionForm.fill_answer_problem)
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    print(speech_to_voice_with_path(file_path=file_on_disk))
+    "update data in db"
+    os.remove(path=file_on_disk)
 
-# Передал в качетсве пример data_base: ClientRepository в функцию под хэндлером
+
 
 @router.message(FSMQuestionForm.fill_answer_problem, F.text.casefold()=='дальше')
 async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
     await state.set_state(FSMQuestionForm.fill_emotions_state)
     # save_user_info(message.from_user.id, 'emotions', message.text)
-    await state.update_data(problem=message.text)
     await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
                          reply_markup=futher_or_back)
 
 
 @router.message(FSMQuestionForm.fill_answer_problem)
 async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
-    if message.voice:
-        pass #dowload file_id and create path here
+    # if message.voice:
+    #     file_id = message.voice.file_id
+    #     file = await bot.get_file(file_id)
+    #     file_path = file.file_path
+    #     file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    #     await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    #     print(speech_to_voice_with_path(file_path=file_on_disk))
 
     with open('voice_data.txt', 'a') as problem_file:
         # problem = await state.get_data()
         problem_file.write(message.text)
-    await state.set_state(FSMQuestionForm.fill_answer_problem_substate)
+    data = await state.update_data(emotions=message.text)
+    await state.set_state(FSMQuestionForm.fill_answer_problem)
+
+
 
 
 @router.message(FSMQuestionForm.fill_emotions_state)
