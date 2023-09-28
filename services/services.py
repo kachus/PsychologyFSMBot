@@ -1,10 +1,11 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Any
-
+import os
 from BD.DBinterface import MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_enteties import Client
 from aiogram.types import Message
-
+from aiogram import Bot
 
 async def save_user_if_not_exist(message: Message, data_base: MongoDataBaseRepositoryInterface) -> None:
     try:
@@ -38,4 +39,13 @@ async def save_answer(message: Message,
     except Exception as e:
         print(e.message, "\n что то пошло не так при сохранении ответа")
 
+
+
+async def load_voice_messages(message:Message, bot:Bot):
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    return file_on_disk
 
