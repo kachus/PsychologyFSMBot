@@ -42,8 +42,12 @@ class Client(Document):
 
 
 class Problem(Document):
+
+    belief = StringField()
+    category_ru = StringField()
+    category_id = StringField()
     sex = StringField()
-    problem = StringField()
+
 
     meta = {
         'collection': 'Problems'  # Здесь указывается имя коллекции

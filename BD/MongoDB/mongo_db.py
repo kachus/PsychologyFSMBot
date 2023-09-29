@@ -86,6 +86,10 @@ class MongoProblemsRepositoryORM(ProblemsRepository):
     def get_man_problems(self) -> list[Problem]:
         return Problem.objects(sex="man")
 
+    @staticmethod
+    def get_man_problems_by_category(category_name_id:str) -> list[Problem]:
+        return Problem.objects(sex="man",category_id=category_name_id)
+
     def get_woman_problems(self) -> list[Problem]:
         return Problem.objects(sex="woman")
 

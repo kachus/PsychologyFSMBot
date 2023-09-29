@@ -8,5 +8,7 @@ LEXICON_RU: dict[str:str] = {
     'save_answer' : 'Сохранить ответ',
     'go_back' : 'Назад',
     'further': 'К следующему шагу',
+    'tell_beliefs': 'Рассказать загон',
+    'chose_beliefs': 'Выбрать загон',
 
 }

@@ -1,5 +1,7 @@
 from aiogram.filters.state import State, StatesGroup
 
+
+
 class FSMQuestionForm(StatesGroup):
     enter_scenario = State()
     start_define_believes = State()
