@@ -33,6 +33,7 @@ class Client(Document):
     date_of_last_visiting = DateTimeField()
     # answers = ListField(Answer)  # Список с объектами Answers
     answers = ListField()  # Список с объектами Answers
+    actual_problem = StringField()
 
 
     meta = {

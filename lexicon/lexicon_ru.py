@@ -7,6 +7,6 @@ LEXICON_RU: dict[str:str] = {
     '/help' : '',
     'save_answer' : 'Сохранить ответ',
     'go_back' : 'Назад',
-    'further': 'Дальше',
+    'further': 'К следующему шагу',
 
 }

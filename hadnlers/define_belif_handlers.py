@@ -1,6 +1,8 @@
 # Сценарий определения убеждения.
 # ___________________________________________________________
 import datetime
+import sys
+import os
 
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
@@ -10,24 +12,29 @@ from aiogram.types import (
     Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
-    CallbackQuery
+    CallbackQuery,
+    InlineQuery
 )
 
 from BD.DBinterface import ClientRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
 from BD.MongoDB.mongo_enteties import Answer
 from keyboards.keyboard_ru import futher_or_back
-from aiogram import Bot, F, Router, html
+from aiogram.enums import ContentType
+from aiogram import Bot, F, Router, html, Dispatcher
+from pathlib import Path
+from services.speech_processer import speech_to_voice_with_path
 
-from aiogram.fsm.storage.memory import MemoryStorage
-
+from config_data.config import load_config
 from services.save_info import save_user_info
 from services.services import save_answer
 # загрузка сценария шагов по сценарию "Определить убедждение \ загон"
 from states.define_belif import FSMQuestionForm
-
+from lexicon.lexicon_ru import LEXICON_RU
 # import keyboards
-
+config = load_config()
+bot = Bot(token=config.tg_bot.token)
+# bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 router = Router()
 new_data = {}
 
@@ -35,14 +42,41 @@ new_data = {}
 # TODO: Сделать сценарий с выбор - Либо из списка готовых, либо свой.
 
 
+@router.callback_query(FSMQuestionForm.start_define_believes)
+async def start_define_believes_scenario(callback_query: CallbackQuery, state: FSMContext):
+    await state.set_state(FSMQuestionForm.fill_answer_problem)
+    await bot.send_message(chat_id=callback_query.from_user.id, text='Теперь опиши проблему, с которой ты столкнулся.'
+                         'Ты можешь написать несколько '
+                         'сообщений. Нажми "Дальше", когда внесешь всю информацию и будешь готов перейти'
+                         'к следующему шагу', reply_markup=futher_or_back)
+
+
+@router.message(FSMQuestionForm.fill_answer_problem, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
+async def process_voice_problem_command(message:Message, state: FSMContext):
+    await state.set_state(FSMQuestionForm.fill_answer_problem)
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    print(speech_to_voice_with_path(file_path=file_on_disk)) #FIXME добавить апдейт в бд текст из аудио
+    "update data in db"
+    os.remove(path=file_on_disk)
+
+
 # Передал в качетсве пример data_base: ClientRepository в функцию под хэндлером
-@router.message(FSMQuestionForm.fill_answer_problem)
+@router.message(FSMQuestionForm.fill_answer_problem, F.text==LEXICON_RU['further'])
 async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
     await state.set_state(FSMQuestionForm.fill_emotions_state)
-    # save_user_info(message.from_user.id, 'emotions', message.text)
-    await state.update_data(problem=message.text)
+    await state.update_data(problem=message.text) #FIXME сделать append записи
     await message.answer('Спасибо! А теперь опиши свои эмоции по этому поводу',
                          reply_markup=futher_or_back)
+
+
+@router.message(FSMQuestionForm.fill_answer_problem)
+async def process_problem_command(message: Message, state: FSMContext, data_base: ClientRepository):
+    data = await state.update_data(emotions=message.text) #FIXME сделать append записи
+    await state.set_state(FSMQuestionForm.fill_answer_problem)
 
 
 @router.message(FSMQuestionForm.fill_emotions_state)
