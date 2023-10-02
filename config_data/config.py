@@ -30,4 +30,4 @@ def load_config(path: str or None = None) -> Config:
                                     port=int(env('DB_PORT')))
                   )
 
-    M
+

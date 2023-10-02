@@ -33,6 +33,7 @@ class Client(Document):
     date_of_last_visiting = DateTimeField()
     # answers = ListField(Answer)  # Список с объектами Answers
     answers = ListField()  # Список с объектами Answers
+    actual_problem = StringField()
 
 
     meta = {
@@ -41,8 +42,12 @@ class Client(Document):
 
 
 class Problem(Document):
+
+    belief = StringField()
+    category_ru = StringField()
+    category_id = StringField()
     sex = StringField()
-    problem = StringField()
+
 
     meta = {
         'collection': 'Problems'  # Здесь указывается имя коллекции
