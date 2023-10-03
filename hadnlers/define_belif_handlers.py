@@ -137,3 +137,4 @@ async def process_analysis(message: Message, state: FSMContext, data_base: Mongo
     await state.clear()
     await message.reply("Тогда перейдем к более глубокой практике, которая позволит"
                         "справиться со страхами")
+

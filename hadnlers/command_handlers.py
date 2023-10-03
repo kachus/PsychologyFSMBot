@@ -6,14 +6,14 @@ from aiogram.filters import Command, CommandStart
 
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
-
+from services.services import save_answer
 from aiogram.types import Message, CallbackQuery
 
 from BD.DBinterface import MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_enteties import Client
-from keyboards.callback_fabric import CategoryBeliefsCallbackFactory
+from keyboards.callback_fabric import CategoryBeliefsCallbackFactory, CommonBeliefsCallbackFactory
 from keyboards.inline_keyboards import create_problem_chose_keyboard, create_define_way, \
-    crete_category_keyboard_chose_belief_for_man, crete_keyboard_chose_belief_for_man
+    crete_category_keyboard_chose_belief_for_man, crete_keyboard_chose_belief_for_man, create_start_practice_kb
 from keyboards.keyboard_ru import futher_or_back, start_define_believes_kb
 from aiogram import Bot, F, Router, html
 
@@ -70,3 +70,20 @@ async def process_chose_belief(callback: CallbackQuery,
                                 message_id=callback.message.message_id,
                                 text=f"Категория: <b>{callback_data.category_name_ru}</b>"
                                      f"\n\nВыбери загон", reply_markup=keyboard)
+
+
+@router.callback_query(CommonBeliefsCallbackFactory.filter())
+async def process_start_with_belief(callback: CallbackQuery,
+                                    callback_data: CommonBeliefsCallbackFactory,
+                                    bot: Bot,
+                                    state: FSMContext,
+                                    data_base):
+    await state.update_data(category=callback_data.category_name_ru)
+    keyboard = create_start_practice_kb()
+    #FIXME save category INTO DB
+    await bot.send_message(chat_id=callback.message.chat.id,
+                           text=f"Ты выбрал загон: <b>{callback_data.category_name_ru}</b>"
+                                f"\n\nНачнем работу?", reply_markup=keyboard)
+
+
+

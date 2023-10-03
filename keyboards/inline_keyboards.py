@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from environs import Env
-
+from services.services import save_answer
 from BD.DBinterface import MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_db import MongoORMConnection
 from BD.MongoDB.mongo_enteties import Problem
@@ -9,6 +9,13 @@ from config_data.config import MongoDB
 from container import data_base_controller
 from keyboards.callback_fabric import CommonBeliefsCallbackFactory, CategoryBeliefsCallbackFactory
 from lexicon.lexicon_ru import LEXICON_RU
+
+def create_start_practice_kb() -> InlineKeyboardMarkup:
+    kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    button = InlineKeyboardButton(text='Начать практику',
+                                  callback_data='start_belief')
+    kb_builder.row(button, width=1)
+    return kb_builder.as_markup()
 
 
 def create_problem_chose_keyboard(data_base_controller: MongoDataBaseRepositoryInterface) -> InlineKeyboardMarkup:
@@ -18,7 +25,7 @@ def create_problem_chose_keyboard(data_base_controller: MongoDataBaseRepositoryI
     for button in problems:
         buttons.append(InlineKeyboardButton(
             text=f'{str(button.problem).strip()[:30]}...',
-            callback_data=str(button.problem).strip()[:30]
+            callback_data=str(button.problem).strip()[:30] #callback data can be changed
         ))
 
     kp_builder.row(*buttons, width=1)
@@ -60,7 +67,7 @@ def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoData
 def crete_keyboard_chose_belief_for_man(category: str, data_base_controller: MongoDataBaseRepositoryInterface):
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     problems: list[Problem] = data_base_controller.problem_repository.get_man_problems_by_category(
-        category_name_id=category)
+        category_name_id=category) #filtering data by received category
     for problem in problems:
         kp_builder.button(
             text=f'{str(problem.belief).strip()[:30]}...',
@@ -77,3 +84,9 @@ def crete_keyboard_chose_belief_for_man(category: str, data_base_controller: Mon
     kp_builder.adjust(1)
     return kp_builder.as_markup()
 
+
+def create_futher_kb():
+    kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    button_further: InlineKeyboardButton = InlineKeyboardButton(text = 'К следующему шагу', callback_data='next_step')
+    kp_builder.row(button_further)
+    return kp_builder.as_markup()

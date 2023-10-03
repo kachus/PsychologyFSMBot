@@ -4,7 +4,7 @@ import logging
 from BD.DBinterface import ClientRepository
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM, MongoDB, MongoORMConnection
 from container import data_base_controller, config, logger
-from hadnlers import command_handlers, define_belif_handlers
+from hadnlers import command_handlers, define_belif_handlers, deep_process_handers
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config_data.config import Config, load_config
@@ -27,7 +27,8 @@ async def main():
     dp = Dispatcher(data_base=data_base_controller)
     # dp: Dispatcher = Dispatcher()
     dp.include_router(command_handlers.router)
-    dp.include_router(define_belif_handlers.router)
+    dp.include_router(deep_process_handers.router)
+    # dp.include_router(define_belif_handlers.router)
     # register_all_handlers(dp)
     # await set_main_menu(dp)
 
