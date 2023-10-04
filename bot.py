@@ -5,8 +5,8 @@ from BD.DBinterface import ClientRepository
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM, MongoDB, MongoORMConnection
 from container import data_base_controller, config, logger
 from hadnlers import command_handlers, define_belif_handlers, deep_process_handers
-from aiogram.fsm.storage.memory import MemoryStorage
-
+# from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage, Redis
 from config_data.config import Config, load_config
 
 
@@ -19,8 +19,10 @@ async def main():
 
     # info about starting the bot
     logger.info('Starting bot')
+    redis = Redis(host='localhost')
+    storage: RedisStorage() = RedisStorage(redis=redis)
 
-    storage: MemoryStorage = MemoryStorage()
+    # storage: MemoryStorage = MemoryStorage()
 
     bot: Bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 
