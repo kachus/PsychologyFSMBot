@@ -64,7 +64,7 @@ def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoData
     return kp_builder.as_markup()
 
 
-def crete_keyboard_chose_belief_for_man(category: str, data_base_controller: MongoDataBaseRepositoryInterface):
+def crete_keyboard_chose_belief_for_man(category: str, data_base_controller: MongoDataBaseRepositoryInterface): #FIXME добавление в коллбек поля belief из монго
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     problems: list[Problem] = data_base_controller.problem_repository.get_man_problems_by_category(
         category_name_id=category) #filtering data by received category
