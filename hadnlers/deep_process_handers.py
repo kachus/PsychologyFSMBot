@@ -1,4 +1,3 @@
-
 import os
 import time
 
@@ -12,7 +11,6 @@ from aiogram.types import (
 
 from BD.DBinterface import ClientRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
-from BD.MongoDB.mongo_enteties import Answer
 from aiogram.enums import ContentType
 from aiogram import Bot, F, Router
 from pathlib import Path
@@ -24,6 +22,7 @@ from services.services import save_answer
 # загрузка сценария шагов по сценарию "Определить убедждение \ загон"
 from states.define_belif import FSMQuestionForm
 from lexicon.lexicon_ru import LEXICON_RU
+
 # import keyboards
 config = load_config()
 bot = Bot(token=config.tg_bot.token)
@@ -32,23 +31,21 @@ router = Router()
 new_data = {}
 
 
-
-
 class FSMQuestionForm(StatesGroup):
     prepare_state = State()
     remember_feeling_state = State()
     struggle_details = State()
     struggle_details_continue = State()
-    emotions_state = State() #начало повторений
+    emotions_state = State()  # начало повторений
     emotions_state_enhance = State()
     body_feelings_state = State()
     body_feelings_enhance = State()
     emotion_visualization_state = State()
     question_root_state = State()
     find_root_state = State()
-    proceed_emotion_root_state = State() #клавиатура с нескольими итерациями , рекурсивно
+    proceed_emotion_root_state = State()  # клавиатура с нескольими итерациями , рекурсивно
     destroy_emotion_state = State()
-    root_event_details_state = State() # те же что и выше но на глубоком уровне
+    root_event_details_state = State()  # те же что и выше но на глубоком уровне
     child_figure_state = State()
     child_figure_continue_state = State()
     parent_figure_state = State()
@@ -58,16 +55,16 @@ class FSMQuestionForm(StatesGroup):
     relaxation_state = State()
     new_deliefe_upper_state = State()
     new_belife_deeper_state = State()
-    new_deliefe_upper_state_continue = State() #несколько повторений
+    new_deliefe_upper_state_continue = State()  # несколько повторений
     new_believe_formualtion_state = State()
     feedback_state = State()
 
 
 @router.callback_query(F.data == 'start_belief')
 async def start_practise(callback: CallbackQuery,
-                                         bot: Bot,
-                                         data_base,
-                                         state: FSMContext):
+                         bot: Bot,
+                         data_base,
+                         state: FSMContext):
     kb = create_futher_kb()
     await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU['prepare_for_practice'],
                            reply_markup=kb)
@@ -76,15 +73,16 @@ async def start_practise(callback: CallbackQuery,
 
 @router.callback_query(FSMQuestionForm.prepare_state, F.data == 'next_step')
 async def relax_command(callback: CallbackQuery,
-                                         bot: Bot,
-                                         data_base,
-                                         state: FSMContext):
+                        bot: Bot,
+                        data_base,
+                        state: FSMContext):
     kb = create_futher_kb()
     for text in LEXICON_RU['instruction_relax']:
-        await bot.send_message(chat_id=callback.from_user.id, text = text)
+        await bot.send_message(chat_id=callback.from_user.id, text=text)
 
         # time.sleep(5)
-    await bot.send_message(chat_id=callback.from_user.id, text='Если ты чувствуешь расслабление, то нажми "К следующему шагу"', reply_markup=kb)
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text='Если ты чувствуешь расслабление, то нажми "К следующему шагу"', reply_markup=kb)
     # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU['instruction_relax'], reply_markup=kb)
     await state.set_state(FSMQuestionForm.remember_feeling_state)
 
@@ -93,21 +91,20 @@ async def relax_command(callback: CallbackQuery,
 async def remember_struggle_process(callback: CallbackQuery,
                                     bot: Bot,
                                     state: FSMContext,
-                                    data_base,):
+                                    data_base, ):
     kb = create_futher_kb()
     await bot.send_message(chat_id=callback.message.chat.id,
-                            text=LEXICON_RU['remember_struggle'], reply_markup=kb)
-                                # reply_markup=keyboard)
+                           text=LEXICON_RU['remember_struggle'], reply_markup=kb)
+    # reply_markup=keyboard)
 
     await state.set_state(FSMQuestionForm.struggle_details)
 
 
 @router.message(FSMQuestionForm.struggle_details, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
 async def process_audio_response(message: Message,
-                                bot: Bot,
-                                data_base,
-                                state: FSMContext):
-
+                                 bot: Bot,
+                                 data_base,
+                                 state: FSMContext):
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
     file_path = file.file_path
@@ -123,12 +120,11 @@ async def process_audio_response(message: Message,
 async def process_next_step(callback: CallbackQuery,
                             state: FSMContext,
                             bot: Bot,
-                            data_base,):
-
+                            data_base, ):
     await state.set_state(FSMQuestionForm.struggle_details_continue)
     kb = create_futher_kb()
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['struggle_details'], reply_markup=kb)
+                           text=LEXICON_RU['struggle_details'], reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.struggle_details_continue, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -136,7 +132,6 @@ async def process_struggle_continue(message: Message,
                                     state: FSMContext,
                                     bot: Bot,
                                     data_base):
-
     await state.set_state(FSMQuestionForm.struggle_details_continue)
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
@@ -148,30 +143,28 @@ async def process_struggle_continue(message: Message,
     os.remove(path=file_on_disk)
 
 
-
 @router.callback_query(FSMQuestionForm.struggle_details_continue, F.data == 'next_step')
 async def process_next_step(callback: CallbackQuery,
                             state: FSMContext,
                             bot: Bot,
-                            data_base,):
+                            data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.emotions_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['struggle_details_continue'],
-                        reply_markup=kb)
-
+                           text=LEXICON_RU['struggle_details_continue'],
+                           reply_markup=kb)
 
 
 @router.callback_query(FSMQuestionForm.emotions_state, F.data == 'next_step')
 async def process_next_emotions(callback: CallbackQuery,
-                            state: FSMContext,
-                            bot: Bot,
-                            data_base,):
+                                state: FSMContext,
+                                bot: Bot,
+                                data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.body_feelings_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['enhance_emotions'],
-                        reply_markup=kb)
+                           text=LEXICON_RU['enhance_emotions'],
+                           reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.emotions_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -190,17 +183,16 @@ async def process_struggle_continue(message: Message,
     os.remove(path=file_on_disk)
 
 
-
 @router.callback_query(FSMQuestionForm.body_feelings_state, F.data == 'next_step')
 async def process_next_emotions(callback: CallbackQuery,
-                            state: FSMContext,
-                            bot: Bot,
-                            data_base,):
+                                state: FSMContext,
+                                bot: Bot,
+                                data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.emotion_visualization_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['body_response'],
-                        reply_markup=kb)
+                           text=LEXICON_RU['body_response'],
+                           reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.body_feelings_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -219,17 +211,16 @@ async def process_struggle_continue(message: Message,
     os.remove(path=file_on_disk)
 
 
-
 @router.callback_query(FSMQuestionForm.emotion_visualization_state, F.data == 'next_step')
 async def process_next_emotions(callback: CallbackQuery,
-                            state: FSMContext,
-                            bot: Bot,
-                            data_base,):
+                                state: FSMContext,
+                                bot: Bot,
+                                data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.question_root_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['root_struggle_question'],
-                        reply_markup=kb)
+                           text=LEXICON_RU['root_struggle_question'],
+                           reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.emotion_visualization_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -237,28 +228,27 @@ async def process_struggle_continue(message: Message,
                                     state: FSMContext,
                                     bot: Bot,
                                     data_base):
-
     await state.set_state(FSMQuestionForm.emotion_visualization_state)
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
     file_path = file.file_path
     file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
     await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    print(speech_to_voice_with_path(file_path=file_on_disk))  # FIXME добавить апдейт в бд текст из аудио
+    print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
     os.remove(path=file_on_disk)
 
 
 @router.callback_query(FSMQuestionForm.question_root_state, F.data == 'next_step')
 async def process_next_emotions(callback: CallbackQuery,
-                            state: FSMContext,
-                            bot: Bot,
-                            data_base,):
+                                state: FSMContext,
+                                bot: Bot,
+                                data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.find_root_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['find_the_root_of_struggle'],
-                        reply_markup=kb)
+                           text=LEXICON_RU['find_the_root_of_struggle'],
+                           reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.question_root_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -279,14 +269,14 @@ async def process_struggle_continue(message: Message,
 
 @router.callback_query(FSMQuestionForm.find_root_state, F.data == 'next_step')
 async def process_next_emotions(callback: CallbackQuery,
-                            state: FSMContext,
-                            bot: Bot,
-                            data_base,):
+                                state: FSMContext,
+                                bot: Bot,
+                                data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.proceed_emotion_root_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['get_rid_of_emotion'],
-                        reply_markup=kb)
+                           text=LEXICON_RU['get_rid_of_emotion'],
+                           reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.find_root_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -307,21 +297,21 @@ async def process_struggle_continue(message: Message,
 
 @router.callback_query(FSMQuestionForm.proceed_emotion_root_state, F.data == 'next_step')
 async def process_next_emotions(callback: CallbackQuery,
-                            state: FSMContext,
-                            bot: Bot,
-                            data_base,):
+                                state: FSMContext,
+                                bot: Bot,
+                                data_base, ):
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.destroy_emotion_state)
     await bot.send_message(chat_id=callback.message.chat.id,
-                        text=LEXICON_RU['get_rid_of_emotion'],
-                        reply_markup=kb)
+                           text=LEXICON_RU['get_rid_of_emotion'],
+                           reply_markup=kb)
 
 
 @router.message(FSMQuestionForm.destroy_emotion_state)
-async def process_message(message:Message,
-                        state: FSMContext,
-                        bot: Bot,
-                        data_base,):
+async def process_message(message: Message,
+                          state: FSMContext,
+                          bot: Bot,
+                          data_base, ):
     kb = create_futher_kb()
     await bot.send_message(chat_id=message.chat.id,
                            text=LEXICON_RU['find_reason'])
