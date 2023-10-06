@@ -28,6 +28,7 @@ class Client(Document):
 
 
 class Problem(Document):
+    belief_id = IntField()
     belief = StringField()
     category_ru = StringField()
     category_id = StringField()

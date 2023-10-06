@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from BD.MongoDB.mongo_enteties import Client, Answer
+from BD.MongoDB.mongo_enteties import Client
 
 
 class ClientRepository(ABC):
@@ -11,7 +11,7 @@ class ClientRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    def save_all_client_answers_by_id(user_telegram_id: int, answers: Answer) -> None:
+    def save_all_client_answers_by_id(user_telegram_id: int, answers) -> None:
         """
         Метод сохраняет все разговры клента
         """

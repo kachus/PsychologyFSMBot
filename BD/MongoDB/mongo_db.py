@@ -4,7 +4,8 @@ from environs import Env
 from mongoengine import connect, DoesNotExist
 
 from BD.DBinterface import ClientRepository, ProblemsRepository, MongoDataBaseRepositoryInterface
-from BD.MongoDB.mongo_enteties import Client, Answer, Problem
+from BD.MongoDB.datat_enteties import Belief
+from BD.MongoDB.mongo_enteties import Client, Problem
 from config_data.config import MongoDB
 
 
@@ -78,6 +79,38 @@ class MongoClientUserRepositoryORM(ClientRepository):
             print(f"Пользователя с id: {user_telegram_id} \nне существует в базе данных")
             return False
 
+    @staticmethod
+    def save_new_belief_to_user(user_telegram_id: int, belief: dict) -> None:
+        """
+        Фуция добавляет новый загон для пользоваителя по его id
+        """
+        user_to_save = Client.objects(telegram_id=user_telegram_id).get()
+        user_to_save.beliefs.append(belief)
+        try:
+            user_to_save.save()
+            print(f'Загон {belief}\nдля пользвателя {user_telegram_id}\nдобавлен')
+        except Exception as e:
+            print("что то пошло не так при сохранении нового загона в базу", e.message, e.args, )
+
+    @staticmethod
+    def get_user_belief_by_belief_id(user_telegram_id: int, belief_id: dict) -> Belief:
+        user = Client.objects(telegram_id=user_telegram_id).get()
+        user_beliefs = user.beliefs
+
+        user_belief = [belief for belief in user_beliefs if belief['belief']['belief_id'] == belief_id][0]
+        print()
+        return Belief().from_dict(user_belief)
+
+    @staticmethod
+    def add_message_to_dialog(user_telegram_id: int, belief_id: dict) -> Belief:
+        # user = Client.objects(telegram_id=user_telegram_id).get()
+        # user_beliefs = user.beliefs
+        #
+        # user_belief = [belief for belief in user_beliefs if belief['belief']['belief_id'] == belief_id][0]
+        # print()
+        # return Belief().from_dict(user_belief)
+        ...
+
     def retrieve_all_data_from_all_clients(self):
         ...
 
@@ -87,11 +120,19 @@ class MongoProblemsRepositoryORM(ProblemsRepository):
         return Problem.objects(sex="man")
 
     @staticmethod
-    def get_man_problems_by_category(category_name_id:str) -> list[Problem]:
-        return Problem.objects(sex="man",category_id=category_name_id)
+    def get_man_problems_by_category(category_name_id: str) -> list[Problem]:
+        return Problem.objects(sex="man", category_id=category_name_id)
 
     def get_woman_problems(self) -> list[Problem]:
         return Problem.objects(sex="woman")
+
+    @staticmethod
+    def get_problem_by_problem_id(belief_id: int) -> Problem:
+        """
+        Функция обращается к базе данных и отдает 1 проблему по ее id
+        """
+
+        return Problem.objects(belief_id=belief_id).get()
 
 
 class MongoDataBaseRepository(MongoDataBaseRepositoryInterface):
@@ -106,6 +147,3 @@ class MongoDataBaseRepository(MongoDataBaseRepositoryInterface):
 
     def problem_repository(self):
         return self.problem_repository
-
-
-

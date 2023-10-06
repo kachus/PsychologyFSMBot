@@ -7,14 +7,17 @@ from BD.MongoDB.mongo_db import MongoORMConnection
 from BD.MongoDB.mongo_enteties import Problem
 from config_data.config import MongoDB
 from container import data_base_controller
-from keyboards.callback_fabric import CommonBeliefsCallbackFactory, CategoryBeliefsCallbackFactory
+from keyboards.callback_fabric import CommonBeliefsCallbackFactory, CategoryBeliefsCallbackFactory, StartBeliefsFactory
 from lexicon.lexicon_ru import LEXICON_RU
 
 
-def create_start_practice_kb() -> InlineKeyboardMarkup:
+def create_start_practice_kb(belief_id) -> InlineKeyboardMarkup:
     kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+
     button = InlineKeyboardButton(text='Начать практику',
-                                  callback_data='start_belief')
+                                  callback_data=StartBeliefsFactory(
+                                      belief_id=belief_id
+                                  ).pack())
     kb_builder.row(button, width=1)
     return kb_builder.as_markup()
 
@@ -25,8 +28,8 @@ def create_problem_chose_keyboard(data_base_controller: MongoDataBaseRepositoryI
     buttons = []
     for button in problems:
         buttons.append(InlineKeyboardButton(
-            text=f'{str(button.problem).strip()[:30]}...',
-            callback_data=str(button.problem).strip()[:30]  # callback data can be changed
+            text=f'{str(button.belief).strip()[:30]}...',
+            callback_data=str(button.belief).strip()[:30]  # callback data can be changed
         ))
 
     kp_builder.row(*buttons, width=1)
@@ -67,7 +70,8 @@ def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoData
 
 
 def crete_keyboard_chose_belief_for_man(category: str,
-                                        data_base_controller: MongoDataBaseRepositoryInterface):  # FIXME добавление в коллбек поля belief из монго
+                                        data_base_controller: MongoDataBaseRepositoryInterface):  # FIXME добавление в коллбек поля belief из монго (ValueError: Resulted callback data is too long! len('chose_common_beliefs:11:Я не имею права отстаивать свою позицию.:girls:man:Девушки'.encode()) > 64)
+    #Из за ограничения в 64 символа передаю только id загона. по этому id можно извлечь название из базы
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     problems: list[Problem] = data_base_controller.problem_repository.get_man_problems_by_category(
         category_name_id=category)  # filtering data by received category
@@ -75,6 +79,7 @@ def crete_keyboard_chose_belief_for_man(category: str,
         kp_builder.button(
             text=f'{str(problem.belief).strip()[:30]}...',
             callback_data=CommonBeliefsCallbackFactory(
+                belief_id=problem.belief_id,
                 category_id=problem.category_id,
                 sex=problem.sex,
                 category_name_ru=problem.category_ru,
