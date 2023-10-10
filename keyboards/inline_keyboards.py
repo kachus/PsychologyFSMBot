@@ -90,3 +90,10 @@ def create_futher_kb():
     button_further: InlineKeyboardButton = InlineKeyboardButton(text = 'К следующему шагу', callback_data='next_step')
     kp_builder.row(button_further)
     return kp_builder.as_markup()
+
+def leave_feedback_or_end_kb():
+    kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    leave_fb_button: InlineKeyboardButton = InlineKeyboardButton(text = 'Оставить отзыв', callback_data='leave_feedback')
+    finish_button: InlineKeyboardButton = InlineKeyboardButton(text='Закончить практику', callback_data='finish_practice')
+    kb_builder.row(finish_button, leave_fb_button)
+    return kb_builder.as_markup()
