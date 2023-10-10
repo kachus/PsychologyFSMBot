@@ -62,6 +62,7 @@ class FSMQuestionForm(StatesGroup):
     new_deliefe_upper_state_continue = State() #несколько повторений
     new_believe_formualtion_state = State()
     feedback_state = State()
+    process_feedback_state = State()
 
 
 @router.callback_query(F.data == 'start_belief')
@@ -318,6 +319,18 @@ async def process_next_emotions(callback: CallbackQuery,
                         reply_markup=kb)
 
 
+@router.callback_query(FSMQuestionForm.destroy_emotion_state, F.data == 'next_step')
+async def process_query(callback: CallbackQuery,
+                        state: FSMContext,
+                        bot: Bot,
+                        data_base,):
+
+    state.set_state(FSMQuestionForm.root_event_contine)
+    kb = create_futher_kb()
+    await bot.send_message(chat_id=callback.message.chat.id,
+                           text=LEXICON_RU['deep_struggle_root'],
+                           reply_markup=kb)
+
 @router.message(FSMQuestionForm.destroy_emotion_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
 async def process_struggle_continue(message: Message,
                                     state: FSMContext,
@@ -333,17 +346,17 @@ async def process_struggle_continue(message: Message,
     "update data in db"
     os.remove(path=file_on_disk)
 
-@router.message(FSMQuestionForm.destroy_emotion_state, F.data == 'next_step')
+
+@router.callback_query(FSMQuestionForm.root_event_contine, F.data == 'next_step')
 async def process_message(message:Message,
                         state: FSMContext,
                         bot: Bot,
                         data_base,):
-    state.set_state(FSMQuestionForm.root_event_contine)
+    state.set_state(FSMQuestionForm.child_figure_state)
     kb = create_futher_kb()
     await bot.send_message(chat_id=message.chat.id,
-                           text=LEXICON_RU['deep_struggle_root'])
-
-
+                           reply_markup= kb,
+                           text=LEXICON_RU['deep_sttruggle_situation'])
 
 @router.message(FSMQuestionForm.root_event_contine, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
 async def process_struggle_continue(message: Message,
@@ -359,17 +372,6 @@ async def process_struggle_continue(message: Message,
     print(speech_to_voice_with_path(file_path=file_on_disk))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
     os.remove(path=file_on_disk)
-
-
-@router.message(FSMQuestionForm.root_event_contine, F.data == 'next_step')
-async def process_message(message:Message,
-                        state: FSMContext,
-                        bot: Bot,
-                        data_base,):
-    state.set_state(FSMQuestionForm.child_figure_state)
-    kb = create_futher_kb()
-    await bot.send_message(chat_id=message.chat.id,
-                           text=LEXICON_RU['deep_sttruggle_situation'])
 
 
 @router.message(FSMQuestionForm.child_figure_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
@@ -399,7 +401,6 @@ async def process_message(message:Message,
                            text=LEXICON_RU['dialogue_adult_enhace_continue'])
 
 
-
 @router.message(FSMQuestionForm.child_figure_continue_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
 async def process_struggle_continue(message: Message,
                                     state: FSMContext,
@@ -427,6 +428,23 @@ async def process_message(message:Message,
                            text=LEXICON_RU['dialogue_to_kid'])
 
 
+
+@router.message(FSMQuestionForm.parent_figure_continue_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
+async def process_struggle_continue(message: Message,
+                                    state: FSMContext,
+                                    bot: Bot,
+                                    data_base):
+    await state.set_state(FSMQuestionForm.parent_figure_continue_state)
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    print(speech_to_voice_with_path(file_path=file_on_disk))  # FIXME добавить апдейт в бд текст из аудио
+    "update data in db"
+    os.remove(path=file_on_disk)
+
+
 @router.message(FSMQuestionForm.parent_figure_continue_state, F.data == 'next_step')
 async def process_message(message:Message,
                         state: FSMContext,
@@ -436,3 +454,80 @@ async def process_message(message:Message,
     kb = create_futher_kb()
     await bot.send_message(chat_id=message.chat.id,
                            text=LEXICON_RU['dialogue_to_adult_response'])
+
+
+@router.message(FSMQuestionForm.dialogue_conclusion_state, F.data == 'next_step')
+async def process_message(message:Message,
+                        state: FSMContext,
+                        bot: Bot,
+                        data_base,):
+    state.set_state(FSMQuestionForm.peace_between_state)
+    kb = create_futher_kb()
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU['dialogue_to_kid_response'])
+
+
+@router.message(FSMQuestionForm.peace_between_state, F.data == 'next_step')
+async def process_message(message:Message,
+                        state: FSMContext,
+                        bot: Bot,
+                        data_base,):
+    state.set_state(FSMQuestionForm.relaxation_state)
+    kb = create_futher_kb()
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU['peace_dialogue'])
+
+
+@router.message(FSMQuestionForm.relaxation_state, F.data == 'next_step')
+async def process_message(message:Message,
+                        state: FSMContext,
+                        bot: Bot,
+                        data_base,):
+    state.set_state(FSMQuestionForm.new_believe_formualtion_state)
+    kb = create_futher_kb()
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU['kid_adult_response'])
+
+
+@router.message(FSMQuestionForm.new_believe_formualtion_state, F.data == 'next_step')
+async def process_message(message:Message,
+                        state: FSMContext,
+                        bot: Bot,
+                        data_base,):
+
+    state.set_state(FSMQuestionForm.feedback_state)
+    kb = create_futher_kb()
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU['conclusion_practise'])
+
+
+@router.message(FSMQuestionForm.feedback_state, F.data == 'next_step')
+async def process_message(message: Message,
+                          state: FSMContext,
+                          bot: Bot,
+                          data_base, ):
+
+    state.set_state(FSMQuestionForm.process_feedback_state)
+    kb = create_futher_kb() #FIXME добавить клавиатуру "завершить или оставить отзыв"
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU['Понравилась ли тебе практика? Ты можешь оставить свой отзыв или завершить ее'])
+
+
+@router.message(FSMQuestionForm.feedback_state, F.data == 'next_step')
+async def process_message(message: Message,
+                          state: FSMContext,
+                          bot: Bot,
+                          data_base, ):
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU[
+                               'Спасибо за отзыв!'])
+
+
+@router.message(FSMQuestionForm.feedback_state, F.data == 'finish_practice')
+async def process_message(message: Message,
+                          state: FSMContext,
+                          bot: Bot,
+                          data_base, ):
+    await bot.send_message(chat_id=message.chat.id,
+                           text=LEXICON_RU[
+                               'Отличная работа! Поздравляю с завершением практики'])
