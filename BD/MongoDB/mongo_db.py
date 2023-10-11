@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from datetime import datetime
 
+from aiogram.fsm.context import FSMContext
 from environs import Env
 from mongoengine import connect, DoesNotExist
 
 from BD.DBinterface import ClientRepository, ProblemsRepository, MongoDataBaseRepositoryInterface
-from BD.MongoDB.datat_enteties import Belief
+from BD.MongoDB.datat_enteties import Belief, Dialog
 from BD.MongoDB.mongo_enteties import Client, Problem
 from config_data.config import MongoDB
 
@@ -98,7 +100,6 @@ class MongoClientUserRepositoryORM(ClientRepository):
         user_beliefs = user.beliefs
 
         user_belief = [belief for belief in user_beliefs if belief['belief']['belief_id'] == belief_id][0]
-        print()
         return Belief().from_dict(user_belief)
 
     @staticmethod
@@ -110,6 +111,21 @@ class MongoClientUserRepositoryORM(ClientRepository):
         # print()
         # return Belief().from_dict(user_belief)
         ...
+
+    @staticmethod
+    def save_belief_data(dialog:Dialog, user_telegram_id: int,belief_id:int):
+        dialog.executed_time.end_time = datetime.now().time().strftime("%H:%M:%S")
+        user = Client.objects(telegram_id=user_telegram_id).get()
+        user_beliefs = user.beliefs
+        #TODO Через map filter
+        user_belief = [belief for belief in user_beliefs if belief['belief']['belief_id'] == belief_id][0]
+        index = user_beliefs.index(user_belief)
+
+        print()
+        user.beliefs[index]['dialogs'].append(dialog.to_dict())
+        user.beliefs[index]['number_of_passages'] +=1
+        user.save()
+        print()
 
     def retrieve_all_data_from_all_clients(self):
         ...

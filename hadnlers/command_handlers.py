@@ -96,7 +96,7 @@ async def process_start_with_belief(callback: CallbackQuery,
     data_base.client_repository.save_new_belief_to_user(user_telegram_id=callback.message.chat.id,
                                                         belief=new_belief.to_dict())# конвертация в словарь для записи в базу
 
-    # FIXME save category INTO DB. Новый загон сохраняется в базе
+
     await bot.send_message(chat_id=callback.message.chat.id,
                            text=f"Ты выбрал загон: <b>{belief.belief}</b>"
                                 f"\n\nНачнем работу?", reply_markup=keyboard)

@@ -2,10 +2,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 import os
+
+from aiogram.fsm.context import FSMContext
+
 from BD.DBinterface import MongoDataBaseRepositoryInterface
+from BD.MongoDB.datat_enteties import DialogMessage, Dialog, Belief
 from BD.MongoDB.mongo_enteties import Client
 from aiogram.types import Message
 from aiogram import Bot
+
+from lexicon.lexicon_ru import LEXICON_RU
 
 
 async def save_user_if_not_exist(message: Message, data_base: MongoDataBaseRepositoryInterface) -> None:
@@ -49,3 +55,35 @@ async def load_voice_messages(message: Message, bot: Bot):
     file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
     await bot.download_file(file_path, destination=file_on_disk.as_posix())
     return file_on_disk
+
+
+async def add_dialog_data(state: FSMContext, message_time, bot_question: str = None, user_answer: str = None, ) -> None:
+    """
+    Функция добовляет сообщения в state словарь
+    """
+    data = await state.get_data()
+    step = await state.get_state()
+    dialog = data.get('dialog')
+    dialog.messages.append(DialogMessage(
+        number=len(dialog.messages) + 1,
+        time=message_time.strftime("%H:%M:%S"),
+        bot_question=bot_question,
+        user_answer=user_answer,
+        step=str(step)
+    ))
+    try:
+        await state.update_data(dialog=dialog)
+        print(f"Сообщение добавлено в список на шаге {step}\n")
+    except Exception as e:
+        print(f"что то пошло не так с обновлением данных для state на на шаге {step}\n", e.args, e.message)
+
+
+async def get_data_to_save(state: FSMContext):
+    data = await state.get_data()
+    dialog: Dialog = data.get('dialog')
+    belief_id = data.get('belief_id')
+    # belief: Belief = data.get('belief')
+    dialog.executed_time.end_time = datetime.now().time()
+    print()
+    # belief.dialogs.append(dialog)
+    # return belief
