@@ -7,7 +7,8 @@ from BD.MongoDB.mongo_db import MongoORMConnection, MongoClientUserRepositoryORM
 from BD.MongoDB.mongo_enteties import Problem
 from config_data.config import MongoDB
 from container import data_base_controller
-from keyboards.callback_fabric import CommonBeliefsCallbackFactory, CategoryBeliefsCallbackFactory, StartBeliefsFactory
+from keyboards.callback_fabric import CommonBeliefsCallbackFactory, CategoryBeliefsCallbackFactory, StartBeliefsFactory, \
+    ExistingBeliefsCallbackFactory
 from lexicon.lexicon_ru import LEXICON_RU
 
 
@@ -108,9 +109,30 @@ def crete_keyboard_chose_belief_for_man(category: str,
             ).pack()
         )
     kp_builder.button(
-        text=f'< Назад категориям',
+        text=f'< Назад к категориям',
         callback_data="chose_beliefs"
     )
+    kp_builder.adjust(1)
+    return kp_builder.as_markup()
+
+
+def crete_keyboard_chose_existing_belief_for_man(user_telegram_id:int, data_base_controller: MongoDataBaseRepositoryInterface):
+    # Из за ограничения в 64 символа передаю только id загона. по этому id можно извлечь название из базы
+    kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    beliefs: list = data_base_controller.client_repository.get_all_existing_beliefs_from_user_by_id(
+        user_telegram_id=user_telegram_id)
+
+    for belief in beliefs:
+        kp_builder.button(
+            text=f'{str(belief["belief"].belief).strip()[:30]}...',
+            callback_data=ExistingBeliefsCallbackFactory(
+                belief_id=belief["belief"].belief_id,
+                category_id=belief["belief"].category_id,
+                sex=belief["belief"].sex,
+                category_name_ru=belief["belief"].category_ru,
+            ).pack()
+        )
+
     kp_builder.adjust(1)
     return kp_builder.as_markup()
 

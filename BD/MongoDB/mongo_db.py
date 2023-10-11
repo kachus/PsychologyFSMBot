@@ -88,8 +88,17 @@ class MongoClientUserRepositoryORM(ClientRepository):
         :return: bool
         """
         user = Client.objects(telegram_id=user_telegram_id).get()
-        beliefs = user.beliefs
+        beliefs: list[dict] = user.beliefs
         return True if len(beliefs) > 0 else False
+
+    @staticmethod
+    def get_all_existing_beliefs_from_user_by_id(user_telegram_id) -> list:
+        """
+        Достаем все загоны над которыми работал пользователь
+        :return: list
+        """
+        user = Client.objects(telegram_id=user_telegram_id).get()
+        return user.beliefs
 
     @staticmethod
     def save_new_belief_to_user(user_telegram_id: int, belief: dict) -> None:
