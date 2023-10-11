@@ -358,7 +358,7 @@ async def process_message(callback: CallbackQuery,
     kb = create_futher_kb()
     await bot.send_message(chat_id=callback.message.chat.id,
                            reply_markup=kb,
-                           text=LEXICON_RU['deep_sttruggle_situation'])
+                           text=LEXICON_RU['deep_sttruggle_situation']) #fixme handler is not working
 
 
 
@@ -651,7 +651,7 @@ async def process_message(callback: CallbackQuery,
                           data_base, ):
 
     await bot.send_message(chat_id=callback.message.chat.id,
-                           text='Спасибо за отзыв!')
+                           text= 'Спасибо за отзыв!')
 
 
 @router.callback_query(FSMQuestionForm.feedback_state, F.data == 'finish_practice')
@@ -661,5 +661,4 @@ async def process_message(callback: CallbackQuery,
                           data_base, ):
 
     await bot.send_message(chat_id=callback.message.chat.id,
-                           text=
-                               'Отличная работа! Поздравляю с завершением практики')
+                           text= 'Отличная работа! Поздравляю с завершением практики')
