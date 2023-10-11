@@ -3,7 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from environs import Env
 from services.services import save_answer
 from BD.DBinterface import MongoDataBaseRepositoryInterface
-from BD.MongoDB.mongo_db import MongoORMConnection
+from BD.MongoDB.mongo_db import MongoORMConnection, MongoClientUserRepositoryORM
 from BD.MongoDB.mongo_enteties import Problem
 from config_data.config import MongoDB
 from container import data_base_controller
@@ -36,13 +36,35 @@ def create_problem_chose_keyboard(data_base_controller: MongoDataBaseRepositoryI
     return kp_builder.as_markup()
 
 
-def create_define_way() -> InlineKeyboardMarkup:
-    kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
-    tell_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['tell_beliefs']}", callback_data='tell_beliefs')
-    chose_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['chose_beliefs']}", callback_data='chose_beliefs')
+def create_define_way(database: MongoDataBaseRepositoryInterface, user_telegram_id: int) -> InlineKeyboardMarkup:
+    """
+    Функция создания клавиатуры для выбора пользователем действия
+    Если пользоваетль уже работал над загоном то ему дается возможность выбрать статитсику и проработку своего загона
+    """
 
-    kp_builder.row(tell_beliefs, chose_beliefs, width=2)
-    return kp_builder.as_markup()
+    # клавиатура для ользователя который в первый раз
+    def return_keyboard_for_new_user():
+        kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+        tell_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['tell_beliefs']}", callback_data='tell_beliefs')
+        chose_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['chose_beliefs']}", callback_data='chose_beliefs')
+
+        kp_builder.row(tell_beliefs, chose_beliefs, width=2)
+        return kp_builder.as_markup()
+
+    # клавиатура для ользователя который уже работал хотя бы над одним загоном ( Условие минимум 1 загон )
+    def return_keyboard_for_existing_user():
+        kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+        tell_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['tell_beliefs']}", callback_data='tell_beliefs')
+        chose_new_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['chose_beliefs']}", callback_data='chose_beliefs')
+        chose_old_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['chose_old_beliefs']}",
+                                                 callback_data='chose_old_beliefs')
+        show_statistic = InlineKeyboardButton(text=f"{LEXICON_RU['show_statistic']}", callback_data='show_statistic')
+        kp_builder.row(tell_beliefs, chose_new_beliefs, width=2)
+        kp_builder.row(chose_old_beliefs, show_statistic, width=1)
+        return kp_builder.as_markup()
+
+    is_belief = database.client_repository.check_clients_belief_in_database(user_telegram_id)
+    return return_keyboard_for_existing_user() if is_belief else return_keyboard_for_new_user()
 
 
 def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoDataBaseRepositoryInterface):
@@ -71,7 +93,7 @@ def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoData
 
 def crete_keyboard_chose_belief_for_man(category: str,
                                         data_base_controller: MongoDataBaseRepositoryInterface):  # FIXME добавление в коллбек поля belief из монго (ValueError: Resulted callback data is too long! len('chose_common_beliefs:11:Я не имею права отстаивать свою позицию.:girls:man:Девушки'.encode()) > 64)
-    #Из за ограничения в 64 символа передаю только id загона. по этому id можно извлечь название из базы
+    # Из за ограничения в 64 символа передаю только id загона. по этому id можно извлечь название из базы
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     problems: list[Problem] = data_base_controller.problem_repository.get_man_problems_by_category(
         category_name_id=category)  # filtering data by received category

@@ -70,10 +70,7 @@ class ClientRepository(ABC):
     def check_client_in_database(user_telegram_id) -> bool:
         pass
 
-    @staticmethod
-    @abstractmethod
-    def retrieve_all_data_from_all_clients(self):
-        pass
+
 
 
 class ProblemsRepository(ABC):
