@@ -9,7 +9,7 @@ from config_data.config import MongoDB
 from container import data_base_controller
 from keyboards.callback_fabric import CommonBeliefsCallbackFactory, CategoryBeliefsCallbackFactory, StartBeliefsFactory, \
     ExistingBeliefsCallbackFactory
-from lexicon.lexicon_ru import LEXICON_RU
+from lexicon.lexicon_ru import LEXICON_RU, emoji_dict
 
 
 def create_start_practice_kb(belief_id) -> InlineKeyboardMarkup:
@@ -70,6 +70,8 @@ def create_define_way(database: MongoDataBaseRepositoryInterface, user_telegram_
 
 def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoDataBaseRepositoryInterface):
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    tell_beliefs = InlineKeyboardButton(text=f"{LEXICON_RU['tell_beliefs']}", callback_data='tell_beliefs')
+    back = InlineKeyboardButton(text=f"⬅ Назад ", callback_data='initial')
     problems: list[Problem] = data_base_controller.problem_repository.get_man_problems()
     find_categories = list(
         zip((category.category_id for category in problems), (category.category_ru for category in problems)))
@@ -81,7 +83,7 @@ def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoData
 
     for category in categories:
         kp_builder.button(
-            text=f'{category[1]}',
+            text=f'{emoji_dict.get(category[0], "❓") } {category[1]}',
             callback_data=CategoryBeliefsCallbackFactory(
                 category_id=category[0],
                 category_name_ru=category[1]
@@ -89,6 +91,8 @@ def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoData
         )
 
     kp_builder.adjust(3)
+    kp_builder.row(tell_beliefs, width=1)
+    kp_builder.row(back, width=1)
     return kp_builder.as_markup()
 
 
@@ -109,7 +113,7 @@ def crete_keyboard_chose_belief_for_man(category: str,
             ).pack()
         )
     kp_builder.button(
-        text=f'< Назад к категориям',
+        text=f'⬅ Назад к категориям',
         callback_data="chose_beliefs"
     )
     kp_builder.adjust(1)

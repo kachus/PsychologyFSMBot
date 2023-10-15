@@ -125,7 +125,7 @@ async def relax_command(callback: CallbackQuery,
         await bot.send_voice(voice=FSInputFile(file_path), chat_id=callback.from_user.id,
                              caption=text,
                              )
-        #ролучаем длинну аудиозаписи и сатвим на задержу по этой длине
+        # ролучаем длинну аудиозаписи и сатвим на задержу по этой длине
         duration = await get_audio_duration(file_path)
         await sleep(duration)
 
@@ -303,7 +303,6 @@ async def process_next_emotions(callback: CallbackQuery,
     await bot.send_voice(voice=FSInputFile(get_file_path('body_response')), chat_id=callback.from_user.id,
                          caption=LEXICON_RU['body_response'],
                          reply_markup=kb)
-
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
@@ -588,7 +587,8 @@ async def process_message(callback: CallbackQuery,
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
     #                        text=LEXICON_RU['dialogue_adult_enhace_continue'])
-    await bot.send_voice(voice=FSInputFile(get_file_path('dialogue_adult_enhace_continue')), chat_id=callback.from_user.id,
+    await bot.send_voice(voice=FSInputFile(get_file_path('dialogue_adult_enhace_continue')),
+                         chat_id=callback.from_user.id,
                          caption=LEXICON_RU['dialogue_adult_enhace_continue'],
                          reply_markup=kb)
 
@@ -825,7 +825,6 @@ async def process_message(callback: CallbackQuery,
                                reply_markup=kb,
                                text=LEXICON_RU['new_belief_upper_response_1'])
 
-
     await add_dialog_data(state,
                           message_time=callback.message.date,
                           bot_question=LEXICON_RU['new_belief_upper_response_1'],
@@ -911,7 +910,6 @@ async def process_message(callback: CallbackQuery,
         await bot.send_message(chat_id=callback.message.chat.id,
                                reply_markup=kb,
                                text=LEXICON_RU['conclusion_practise'])
-
 
 
 @router.message(FSMQuestionForm.new_believe_formualtion_state,

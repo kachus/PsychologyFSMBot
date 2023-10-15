@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 
 from BD.MongoDB.datat_enteties import Belief
 
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InputFile, FSInputFile
 
 from BD.DBinterface import MongoDataBaseRepositoryInterface
 
@@ -27,14 +27,29 @@ router = Router()
 
 
 @router.message(CommandStart())
-async def command_start(message: Message, state: FSMContext, data_base: MongoDataBaseRepositoryInterface):
+async def command_start(message: Message,bot: Bot, state: FSMContext, data_base: MongoDataBaseRepositoryInterface):
     # Если пользователя нет в базе данных, то сохраняем в БД
     await save_user_if_not_exist(message, data_base)
     #Клавиатура принимает id чата для того чтобы определить был он или нет в базе
     inline_keyboard = create_define_way(database=data_base,
                                         user_telegram_id=message.chat.id)
+    # await message.answer('Привет! Этот бот поможет разобраться тебе с твоими загонами!', reply_markup=inline_keyboard)
+    inline_keyboard = create_define_way(database=data_base,
+                                        user_telegram_id=message.chat.id)
     await message.answer('Привет! Этот бот поможет разобраться тебе с твоими загонами!', reply_markup=inline_keyboard)
 
+    # Отправка анимации в сообщении
+
+@router.callback_query(F.data == 'initial')
+async def initial_keyboard(callback: CallbackQuery,bot: Bot, data_base: MongoDataBaseRepositoryInterface):
+
+    #Клавиатура принимает id чата для того чтобы определить был он или нет в базе
+    inline_keyboard = create_define_way(database=data_base,
+                                        user_telegram_id=callback.message.chat.id)
+    await bot.edit_message_text(chat_id=callback.message.chat.id,
+                                message_id=callback.message.message_id,
+                                text='Привет! Этот бот поможет разобраться тебе с твоими загонами!',
+                                reply_markup=inline_keyboard)
 
 @router.callback_query(F.data == 'tell_beliefs')
 async def process_tell_beliefs_command(callback: CallbackQuery):
