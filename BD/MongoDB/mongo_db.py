@@ -125,12 +125,17 @@ class MongoClientUserRepositoryORM(ClientRepository):
         dialog.executed_time.end_time = datetime.now().time().strftime("%H:%M:%S")
         user = Client.objects(telegram_id=user_telegram_id).get()
         user_beliefs = user.beliefs
-        # TODO Через map filter
         user_belief = [belief for belief in user_beliefs if belief['belief']['belief_id'] == belief_id][0]
         index = user_beliefs.index(user_belief)
         user.beliefs[index]['dialogs'].append(dialog.to_dict())
         user.beliefs[index]['number_of_passages'] += 1
-        user.save()
+        try:
+            user.save()
+            print(f"Данные: {user_belief}\n"
+                  f"Для пользователя: {user_telegram_id}\n"
+                  f"Cохранены успешено ")
+        except Exception as e:
+            print(f"Что то пошло не так при сохранение данных для пользователя {user_telegram_id}\n", e.args, )
 
 
 class MongoProblemsRepositoryORM(ProblemsRepository):

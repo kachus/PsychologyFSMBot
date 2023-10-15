@@ -119,9 +119,10 @@ def crete_keyboard_chose_belief_for_man(category: str,
 def crete_keyboard_chose_existing_belief_for_man(user_telegram_id:int, data_base_controller: MongoDataBaseRepositoryInterface):
     # Из за ограничения в 64 символа передаю только id загона. по этому id можно извлечь название из базы
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
-    beliefs: list = data_base_controller.client_repository.get_all_existing_beliefs_from_user_by_id(
-        user_telegram_id=user_telegram_id)
-
+    #Исключаем дубликаты
+    print()
+    beliefs: list = list(data_base_controller.client_repository.get_all_existing_beliefs_from_user_by_id(
+        user_telegram_id=user_telegram_id))
     for belief in beliefs:
         kp_builder.button(
             text=f'{str(belief["belief"].belief).strip()[:30]}...',

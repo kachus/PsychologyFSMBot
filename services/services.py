@@ -10,7 +10,7 @@ from BD.MongoDB.datat_enteties import DialogMessage, Dialog, Belief
 from BD.MongoDB.mongo_enteties import Client
 from aiogram.types import Message
 from aiogram import Bot
-
+from pydub import AudioSegment
 from lexicon.lexicon_ru import LEXICON_RU
 
 
@@ -87,3 +87,13 @@ async def get_data_to_save(state: FSMContext):
     print()
     # belief.dialogs.append(dialog)
     # return belief
+
+
+async def get_audio_duration(file_path):
+    try:
+        audio = AudioSegment.from_file(file_path)
+        duration_in_seconds = len(audio) / 1000  # Преобразование миллисекунд в секунды
+        return duration_in_seconds + 1
+    except Exception as e:
+        print(f"Ошибка при измерении длительности аудио: {str(e)}")
+        return None
