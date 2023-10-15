@@ -160,7 +160,7 @@ async def remember_struggle_process(callback: CallbackQuery,
     await state.set_state(FSMQuestionForm.struggle_details)
 
 
-@router.message(FSMQuestionForm.struggle_details, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
+@router.message(FSMQuestionForm.struggle_details, F.content_type.in_({ContentType.VOICE}))
 async def process_audio_response(message: Message,
                                  bot: Bot,
                                  data_base,
@@ -201,7 +201,7 @@ async def process_next_step(callback: CallbackQuery,
                           )
 
 
-@router.message(FSMQuestionForm.struggle_details_continue, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
+@router.message(FSMQuestionForm.struggle_details_continue, F.content_type.in_({ContentType.VOICE}))
 async def process_struggle_continue(message: Message,
                                     state: FSMContext,
                                     bot: Bot,
@@ -265,7 +265,7 @@ async def process_next_emotions(callback: CallbackQuery,
                           )
 
 
-@router.message(FSMQuestionForm.emotions_state, F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}))
+@router.message(FSMQuestionForm.emotions_state, F.content_type.in_({ContentType.VOICE}))
 async def process_struggle_continue(message: Message,
                                     state: FSMContext,
                                     bot: Bot,

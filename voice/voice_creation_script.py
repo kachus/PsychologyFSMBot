@@ -1,12 +1,13 @@
 from elevenlabs import generate, save, set_api_key
 from environs import Env
 
-from voice.text import TEXT
+from voice.text_edited import TEXT
+# from voice.text import TEXT
 
 env: Env = Env()
 env.read_env('.env')
 set_api_key(env("ELEVEN_API_KEY"))
-print()
+
 
 for key, value in TEXT.items():
     print()
@@ -14,7 +15,7 @@ for key, value in TEXT.items():
         for num, v in enumerate(value):
             audio = generate(
                 text=v,
-                voice="Michael",
+                voice="Thomas",
                 model="eleven_multilingual_v2"
             )
 
@@ -22,7 +23,7 @@ for key, value in TEXT.items():
     else:
         audio = generate(
             text=value,
-            voice="Michael",
+            voice="Thomas",
             model="eleven_multilingual_v2"
         )
 
