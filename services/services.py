@@ -93,7 +93,7 @@ async def get_audio_duration(file_path):
     try:
         audio = AudioSegment.from_file(file_path)
         duration_in_seconds = len(audio) / 1000  # Преобразование миллисекунд в секунды
-        return duration_in_seconds + 1
+        return duration_in_seconds
     except Exception as e:
         print(f"Ошибка при измерении длительности аудио: {str(e)}")
         return None

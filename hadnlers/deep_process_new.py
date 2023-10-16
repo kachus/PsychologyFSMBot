@@ -120,7 +120,6 @@ async def relax_command(callback: CallbackQuery,
     print()
     kb = create_futher_kb()
     for num, text in enumerate(LEXICON_RU['instruction_relax']):
-        # await bot.send_message(chat_id=callback.from_user.id, text=text)
         file_path = get_file_path(f'instruction_relax_{num}')
         await bot.send_voice(voice=FSInputFile(file_path), chat_id=callback.from_user.id,
                              caption=text,
@@ -968,11 +967,25 @@ async def process_message(message: Message,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
-    await add_dialog_data(state,
-                          message_time=message.date,
-                          bot_question='Отзыв',
-                          user_answer=message.text
-                          )
+    if F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}):
+        file_id = message.voice.file_id
+        file = await bot.get_file(file_id)
+        file_path = file.file_path
+        file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+        await bot.download_file(file_path, destination=file_on_disk.as_posix())
+        await add_dialog_data(state,
+                              message_time=message.date,
+                              bot_question='Отзыв',
+                              user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
+
+                              )
+        os.remove(path=file_on_disk)
+    else:
+        await add_dialog_data(state,
+                              message_time=message.date,
+                              bot_question='Отзыв',
+                              user_answer=message.text
+                              )
 
     data = await state.get_data()
     dialog: Dialog = data.get('dialog')
@@ -981,7 +994,13 @@ async def process_message(message: Message,
                                                  user_telegram_id=message.from_user.id,
                                                  belief_id=belief_id)
 
+    inline_keyboard = create_define_way(database=data_base,
+                                        user_telegram_id=message.chat.id)
     await message.reply(text='Спасибо за отзыв!')
+    await sleep(1)
+    await bot.send_message(chat_id=message.chat.id,
+                           text='Выбери что ты хочешь сделать',
+                           reply_markup=inline_keyboard)
 
 
 @router.callback_query(FSMQuestionForm.feedback_state, F.data == 'finish_practice')
