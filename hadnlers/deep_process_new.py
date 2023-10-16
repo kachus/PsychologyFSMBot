@@ -959,7 +959,7 @@ async def process_message(callback: CallbackQuery,
     #                                              belief_id=belief_id)
 
     await bot.send_message(chat_id=callback.message.chat.id,
-                           text='Можешь написать свой отзыв тут!')
+                           text='Можешь написать свой отзыв текстом тут или запись отзыв голосовым сообщением!')
 
 
 @router.message(FSMQuestionForm.process_feedback_state)
