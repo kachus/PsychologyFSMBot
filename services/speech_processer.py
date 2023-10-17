@@ -14,6 +14,7 @@ def speech_to_voice_with_path(file_path: str) -> str or tuple:
     try:
         audio = whisper.load_audio(file_path)
         transcibed_result = model.transcribe(audio, language='ru')
+        print("Распознаный тескст: ", transcibed_result['text'])
         return transcibed_result['text']
     except Exception as e:
         print('could not transcibe audio')

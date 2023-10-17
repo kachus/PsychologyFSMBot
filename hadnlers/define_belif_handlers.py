@@ -18,7 +18,7 @@ from aiogram.types import (
 
 from BD.DBinterface import ClientRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
-from BD.MongoDB.mongo_enteties import Answer
+
 from keyboards.keyboard_ru import futher_or_back
 from aiogram.enums import ContentType
 from aiogram import Bot, F, Router, html, Dispatcher
