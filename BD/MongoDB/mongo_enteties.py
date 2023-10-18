@@ -21,6 +21,7 @@ class Client(Document):
     date_of_first_using = DateTimeField(required=True)
     date_of_last_visiting = DateTimeField()
     beliefs = ListField()
+    gender = StringField()
 
     meta = {
         'collection': 'Clients'  # Здесь указывается имя коллекции

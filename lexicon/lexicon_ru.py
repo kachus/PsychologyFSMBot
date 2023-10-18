@@ -62,3 +62,8 @@ emoji_dict = {
     "core_issues": "💡",
     "self_estim": "🤗"
 }
+
+
+keyboards_text = {
+    'choose_gender': 'Выбери свой пол'
+}

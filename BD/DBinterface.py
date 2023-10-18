@@ -70,7 +70,10 @@ class ClientRepository(ABC):
     def check_client_in_database(user_telegram_id) -> bool:
         pass
 
-
+    @staticmethod
+    @abstractmethod
+    def update_gender(user_id: int, gender: str) -> None:
+        pass
 
 
 class ProblemsRepository(ABC):

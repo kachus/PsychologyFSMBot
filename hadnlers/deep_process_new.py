@@ -22,7 +22,7 @@ from pathlib import Path
 
 from services.services import save_answer, add_dialog_data, get_data_to_save, get_audio_duration
 from services.speech_processer import speech_to_voice_with_path
-from keyboards.inline_keyboards import create_futher_kb, leave_feedback_or_end_kb, create_define_way
+from keyboards.inline_keyboards import create_futher_kb, leave_feedback_or_end_kb, create_define_way_male
 from config_data.config import load_config
 from services.services import save_answer
 
@@ -99,7 +99,7 @@ async def start_practise(callback: CallbackQuery,
         number=len(dialog.messages) + 1,
         time=callback.message.date.time().strftime("%H:%M:%S"),
         bot_question=LEXICON_RU['prepare_for_practice'],
-        step=str(state.get_state())
+        step=str(await state.get_state())
     ))
     # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU['prepare_for_practice'],
     #                        reply_markup=kb)
@@ -994,7 +994,7 @@ async def process_message(message: Message,
                                                  user_telegram_id=message.from_user.id,
                                                  belief_id=belief_id)
 
-    inline_keyboard = create_define_way(database=data_base,
+    inline_keyboard = create_define_way_male(database=data_base,
                                         user_telegram_id=message.chat.id)
     await message.reply(text='Спасибо за отзыв!')
     await sleep(1)
@@ -1008,7 +1008,7 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
-    inline_keyboard = create_define_way(database=data_base,
+    inline_keyboard = create_define_way_male(database=data_base,
                                         user_telegram_id=callback.message.chat.id)
     data = await state.get_data()
     dialog: Dialog = data.get('dialog')
