@@ -25,6 +25,13 @@ class MongoClientUserRepositoryORM(ClientRepository):
         user.save()
         print(f"пользователь c id: {Client.id}\nзанесен в базу \n {Client.objects}")
 
+    @staticmethod #fixme
+    def update_gender(user_id: int, gender: str) -> None:
+        user_to_update = Client.objects(telegram_id=user_id).get()
+        user_to_update.gender = gender
+        user_to_update.save()
+
+
     @staticmethod
     def save_all_client_answers_by_id(user_telegram_id: int, answers: dict) -> None:
         user_to_update = Client.objects(telegram_id=user_telegram_id).get()
