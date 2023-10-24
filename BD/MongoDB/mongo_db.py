@@ -30,6 +30,7 @@ class MongoClientUserRepositoryORM(ClientRepository):
         user_to_update = Client.objects(telegram_id=user_id).get()
         user_to_update.gender = gender
         user_to_update.save()
+        print('сохранен пол:', gender)
 
 
     @staticmethod
@@ -157,11 +158,15 @@ class MongoProblemsRepositoryORM(ProblemsRepository):
         return Problem.objects(sex="woman")
 
     @staticmethod
+    def get_woman_problems_by_category(category_name_id: str) -> list[Problem]:
+        return Problem.objects(sex='woman', category_id = category_name_id)
+
+    @staticmethod
     def get_problem_by_problem_id(belief_id: int) -> Problem:
         """
         Функция обращается к базе данных и отдает 1 проблему по ее id
         """
-
+        print(Problem.objects(belief_id=belief_id).get())
         return Problem.objects(belief_id=belief_id).get()
 
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from aiogram.filters import  CommandStart
 
 from aiogram.fsm.context import FSMContext
+from BD.MongoDB.mongo_enteties import Problem, Client
 
 from aiogram.filters.state import State, StatesGroup
 from BD.MongoDB.datat_enteties import Belief
@@ -15,8 +16,8 @@ from BD.DBinterface import MongoDataBaseRepositoryInterface
 
 from keyboards.callback_fabric import CategoryBeliefsCallbackFactory, CommonBeliefsCallbackFactory
 from keyboards.inline_keyboards import  \
-    crete_category_keyboard_chose_belief_for_man, crete_keyboard_chose_belief_for_man, create_start_practice_kb, choose_gender_kb, crete_category_keyboard_chose_belief_for_woman, \
-    create_define_way_male, create_define_way_female,crete_keyboard_chose_belief_for_woman
+    crete_category_keyboard_chose_belief_for_man, create_define_way,crete_keyboard_chose_belief_for_man, create_start_practice_kb, choose_gender_kb, crete_category_keyboard_chose_belief_for_woman, \
+    create_keyboard_chose_belief, crete_category_keyboard
 
 
 from aiogram import Bot, F, Router, html
@@ -36,7 +37,7 @@ class FSMCommonCommands(StatesGroup):
     male_struggle = State()
 
 
-#
+# #
 # @router.message(CommandStart())
 # async def command_start(message: Message,bot: Bot, state: FSMContext, data_base: MongoDataBaseRepositoryInterface):
 #     # Если пользователя нет в базе данных, то сохраняем в БД
@@ -74,13 +75,16 @@ async def initial_keyboard(message: Message,bot: Bot, data_base: MongoDataBaseRe
 #                                 text='Привет! Этот бот поможет разобраться тебе с твоими загонами!',
 #                                 reply_markup=inline_keyboard)
 
-@router.callback_query(F.data == 'female')
+
+@router.callback_query(F.data.contains('male'))
 async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: MongoDataBaseRepositoryInterface,
                               state: FSMContext):
-    await state.update_data(gender='female')
-    inline_keyboard = create_define_way_female(database=data_base,
+    inline_keyboard = create_define_way(database=data_base,
                                         user_telegram_id=callback.message.chat.id)
-    data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='female')
+    if callback.data == 'female':
+        data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='female')
+    elif callback.data == 'male':
+        data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='male')
 
     await bot.edit_message_text(chat_id=callback.message.chat.id,
                                 message_id=callback.message.message_id,
@@ -88,24 +92,36 @@ async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: Mong
                                 reply_markup=inline_keyboard)
 
 
-@router.callback_query(F.data == 'male')
-async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: MongoDataBaseRepositoryInterface,
-                              state: FSMContext):
-    await state.update_data(gender='male')
+# @router.callback_query(F.data == 'male')
+# async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: MongoDataBaseRepositoryInterface,
+#                               state: FSMContext):
+#     await state.update_data(gender='male')
+#
+#
+#     inline_keyboard = create_define_way_male(database=data_base,
+#                                         user_telegram_id=callback.message.chat.id)
+#
+#     data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='male')
+#     await bot.edit_message_text(chat_id=callback.message.chat.id,
+#                                 message_id=callback.message.message_id,
+#                                 text='Выбери подходящую команду',
+#                                 reply_markup=inline_keyboard)
 
+@router.callback_query(F.data == 'chose_beliefs')
+async def process_chose_beliefs_category(callback: CallbackQuery,
+                                         bot: Bot,
+                                         data_base,
+                                         state: FSMContext):
+    kb = crete_category_keyboard(user_id=callback.message.chat.id, data_base_controller = data_base)
+    print('chosing category')
 
-    inline_keyboard = create_define_way_male(database=data_base,
-                                        user_telegram_id=callback.message.chat.id)
-
-    data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='male')
     await bot.edit_message_text(chat_id=callback.message.chat.id,
                                 message_id=callback.message.message_id,
-                                text='Выбери подходящую команду',
-                                reply_markup=inline_keyboard)
+                                text="Выбери категорию",
+                                reply_markup=kb)
 
 
-
-@router.callback_query(F.data == 'tell_beliefs_male')
+@router.callback_query(F.data == 'tell_beliefs')
 async def process_tell_beliefs_command(callback: CallbackQuery):
     ...
 
@@ -117,61 +133,22 @@ async def process_tell_beliefs_command(callback: CallbackQuery):
 #     await bot.send_voice(chat_id=callback.message.id,
 #                          )
 
-@router.callback_query(F.data == 'chose_beliefs_male')
-async def process_chose_beliefs_category(callback: CallbackQuery,
-                                         bot: Bot,
-                                         data_base,
-                                         state: FSMContext):
-    await state.set_state(FSMCommonCommands.male_struggle)
 
-    keyboard = crete_category_keyboard_chose_belief_for_man(data_base)
-    await bot.edit_message_text(chat_id=callback.message.chat.id,
-                                message_id=callback.message.message_id,
-                                text="Выбери категорию",
-                                reply_markup=keyboard)
-
-
-@router.callback_query(F.data == 'chose_beliefs_female')
-async def process_chose_beliefs_category(callback: CallbackQuery,
-                                         bot: Bot,
-                                         data_base,
-                                         state: FSMContext):
-    await state.set_state(FSMCommonCommands.female_struggle)
-
-    keyboard = crete_category_keyboard_chose_belief_for_woman(data_base)
-    await bot.edit_message_text(chat_id=callback.message.chat.id,
-                                message_id=callback.message.message_id,
-                                text="Выбери категорию",
-                                reply_markup=keyboard)
-
-@router.callback_query(FSMCommonCommands.female_struggle, CategoryBeliefsCallbackFactory.filter())
+@router.callback_query(CategoryBeliefsCallbackFactory.filter())
 async def process_chose_belief(callback: CallbackQuery,
                                callback_data: CategoryBeliefsCallbackFactory,
                                bot: Bot,
-                               data_base,
-                               state: FSMContext):
-    keyboard = crete_keyboard_chose_belief_for_woman(category=callback_data.category_id,
-                                                   data_base_controller=data_base)
+                               data_base,):
 
 
+    keyboard = create_keyboard_chose_belief(data_base_controller=data_base, user_id=callback.message.chat.id,
+                                            category=callback_data.category_id,)
+    #тут нужно отобразить категорию в коллбэе  полностью и не нужен пол
     await bot.edit_message_text(chat_id=callback.message.chat.id,
                                 message_id=callback.message.message_id,
                                 text=f"Категория: <b>{callback_data.category_name_ru}</b>"
                                      f"\n\nВыбери загон", reply_markup=keyboard)
 
-
-@router.callback_query(FSMCommonCommands.male_struggle, CategoryBeliefsCallbackFactory.filter())
-async def process_chose_belief(callback: CallbackQuery,
-                               callback_data: CategoryBeliefsCallbackFactory,
-                               bot: Bot,
-                               data_base):
-    keyboard = crete_keyboard_chose_belief_for_man(category=callback_data.category_id,
-                                                   data_base_controller=data_base)
-
-    await bot.edit_message_text(chat_id=callback.message.chat.id,
-                                message_id=callback.message.message_id,
-                                text=f"Категория: <b>{callback_data.category_name_ru}</b>"
-                                     f"\n\nВыбери загон", reply_markup=keyboard)
 
 
 # Если пользователь выбирает загон в этом сценарии то это новый загон
@@ -182,7 +159,9 @@ async def process_start_with_belief(callback: CallbackQuery,
                                     state: FSMContext,
                                     data_base):
     # получаем загон по его id
-    belief = data_base.problem_repository.get_problem_by_problem_id(callback_data.belief_id)
+    print('belief_id:', callback_data.belief_id)
+    print(callback_data.belief_id)
+    belief = data_base.problem_repository.get_problem_by_problem_id(belief_id=callback_data.belief_id)
     await state.update_data(category=callback_data.category_name_ru)
     #Передаем в клавиатуру id загона
     keyboard = create_start_practice_kb(callback_data.belief_id)
@@ -198,6 +177,6 @@ async def process_start_with_belief(callback: CallbackQuery,
 
 
     await bot.send_message(chat_id=callback.message.chat.id,
-                           text=f"Ты выбрал загон: <b>{belief.belief}</b>"
+                           text=f"Ты выбрал(а) загон: <b>{belief.belief}</b>"
                                 f"\n\nНачнем работу?", reply_markup=keyboard)
     # TODO: Сделать передачу данных с ID загона
