@@ -4,6 +4,7 @@ import logging
 from BD.DBinterface import ClientRepository
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM, MongoDB, MongoORMConnection
 from container import data_base_controller, config, logger
+# deep_process_new
 from hadnlers import command_handlers, define_belif_handlers, deep_process_handers, deep_process_new, chose_existing_belief_handlers, \
     show_statistic_handler
 # from aiogram.fsm.storage.memory import MemoryStorage

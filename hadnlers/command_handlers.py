@@ -1,23 +1,25 @@
 # Все хэндлеры с командами тут
 # ______________________________________________
+import os
 from datetime import datetime
 
 from aiogram.filters import  CommandStart
-
+from pathlib import Path
 from aiogram.fsm.context import FSMContext
 from BD.MongoDB.mongo_enteties import Problem, Client
-
+from services.speech_processer import speech_to_voice_with_path
 from aiogram.filters.state import State, StatesGroup
 from BD.MongoDB.datat_enteties import Belief
-
+from aiogram.enums import ContentType
 from aiogram.types import Message, CallbackQuery, InputFile, FSInputFile
 
 from BD.DBinterface import MongoDataBaseRepositoryInterface
 
 from keyboards.callback_fabric import CategoryBeliefsCallbackFactory, CommonBeliefsCallbackFactory
 from keyboards.inline_keyboards import  \
-    crete_category_keyboard_chose_belief_for_man, create_define_way,crete_keyboard_chose_belief_for_man, create_start_practice_kb, choose_gender_kb, crete_category_keyboard_chose_belief_for_woman, \
-    create_keyboard_chose_belief, crete_category_keyboard
+    create_define_way,create_start_practice_kb, choose_gender_kb,  \
+    create_keyboard_chose_belief, crete_category_keyboard, back_to_menu
+
 
 
 from aiogram import Bot, F, Router, html
@@ -31,10 +33,8 @@ router = Router()
 
 class FSMCommonCommands(StatesGroup):
     gender = State()
-    female_category = State()
-    male_category = State()
-    female_struggle = State()
-    male_struggle = State()
+    own_struggle = State()
+
 
 
 # #
@@ -64,19 +64,8 @@ async def initial_keyboard(message: Message,bot: Bot, data_base: MongoDataBaseRe
                            reply_markup=keyboard)
 
 
-# @router.callback_query(F.data == 'initial')
-# async def initial_keyboard(callback: CallbackQuery,bot: Bot, data_base: MongoDataBaseRepositoryInterface):
-#
-#     #Клавиатура принимает id чата для того чтобы определить был он или нет в базе
-#     inline_keyboard = create_define_way(database=data_base,
-#                                         user_telegram_id=callback.message.chat.id)
-#     await bot.edit_message_text(chat_id=callback.message.chat.id,
-#                                 message_id=callback.message.message_id,
-#                                 text='Привет! Этот бот поможет разобраться тебе с твоими загонами!',
-#                                 reply_markup=inline_keyboard)
 
-
-@router.callback_query(F.data.contains('male'))
+@router.callback_query(F.data.contains('male')) #тут выдается главная клавиатура
 async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: MongoDataBaseRepositoryInterface,
                               state: FSMContext):
     inline_keyboard = create_define_way(database=data_base,
@@ -86,26 +75,13 @@ async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: Mong
     elif callback.data == 'male':
         data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='male')
 
+    await state.update_data(gender=callback.data)
+
     await bot.edit_message_text(chat_id=callback.message.chat.id,
                                 message_id=callback.message.message_id,
                                 text='Выбери подходящую команду',
                                 reply_markup=inline_keyboard)
 
-
-# @router.callback_query(F.data == 'male')
-# async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: MongoDataBaseRepositoryInterface,
-#                               state: FSMContext):
-#     await state.update_data(gender='male')
-#
-#
-#     inline_keyboard = create_define_way_male(database=data_base,
-#                                         user_telegram_id=callback.message.chat.id)
-#
-#     data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='male')
-#     await bot.edit_message_text(chat_id=callback.message.chat.id,
-#                                 message_id=callback.message.message_id,
-#                                 text='Выбери подходящую команду',
-#                                 reply_markup=inline_keyboard)
 
 @router.callback_query(F.data == 'chose_beliefs')
 async def process_chose_beliefs_category(callback: CallbackQuery,
@@ -122,24 +98,54 @@ async def process_chose_beliefs_category(callback: CallbackQuery,
 
 
 @router.callback_query(F.data == 'tell_beliefs')
-async def process_tell_beliefs_command(callback: CallbackQuery):
-    ...
+async def process_tell_beliefs_command(callback: CallbackQuery,
+                                       bot: Bot,
+                                       data_base,
+                                       state: FSMContext):
+    kb = back_to_menu()
 
-# @router.callback_query(F.data=='choose_beliefs')
-# async def process_gender_choice(callback: CallbackQuery,
-#                                 bot: Bot,
-#                                 data_base):
-#     kb = choose_gender_kb()
-#     await bot.send_voice(chat_id=callback.message.id,
-#                          )
+    await bot.send_message(chat_id=callback.message.chat.id,text='Расскажи свой загон! Ты можешь сделать это текстом, а также можешь записать'
+                                'аудио сообщение. Нажми "Дальше", когда закончишь', reply_markup=kb)
+    await state.set_state(FSMCommonCommands.own_struggle)
+
+
+
+@router.message(FSMCommonCommands.own_struggle, F.content_type.in_({ContentType.VOICE}))
+async def process_personal_struggle_voice(message: Message,
+                                          bot: Bot,
+                                          state: FSMContext,
+                                          data_base):
+
+    await state.set_state(FSMCommonCommands.own_struggle)
+
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    print(file_on_disk)
+    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    user_answer = speech_to_voice_with_path(file_path=file_on_disk.as_posix())
+    os.remove(path=file_on_disk)
+
+
+
+@router.message(FSMCommonCommands.own_struggle,  F.content_type.in_({ContentType.TEXT}))
+async def process_own_struggle_text(message:Message,
+                                    bot: Bot,
+                                    state: FSMContext,
+                                    data_base):
+    user_answer = message.text
+    print(user_answer)
+    await state.set_state(FSMCommonCommands.own_struggle)
+
+
 
 
 @router.callback_query(CategoryBeliefsCallbackFactory.filter())
 async def process_chose_belief(callback: CallbackQuery,
                                callback_data: CategoryBeliefsCallbackFactory,
                                bot: Bot,
-                               data_base,):
-
+                               data_base):
 
     keyboard = create_keyboard_chose_belief(data_base_controller=data_base, user_id=callback.message.chat.id,
                                             category=callback_data.category_id,)

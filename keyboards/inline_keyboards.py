@@ -112,10 +112,10 @@ def create_keyboard_chose_belief(category: str,
         kp_builder.button(
             text=f'{str(problem.belief).strip()[:30]}...',
             callback_data=CommonBeliefsCallbackFactory(
-                belief_id=problem.belief_id,
+                belief_id=str(problem.belief_id).strip()[:10],
                 category_id=problem.category_id,
-                sex='s',
-                category_name_ru='t',
+                sex=problem.sex,
+                category_name_ru=str(problem.category_ru).strip()[:10],
             ).pack()
         )
     # for problem in problems:
@@ -145,7 +145,6 @@ def crete_category_keyboard(data_base_controller: MongoDataBaseRepositoryInterfa
         problems: list[Problem] = data_base_controller.problem_repository.get_man_problems()
     else:
         problems: list[Problem] = data_base_controller.problem_repository.get_woman_problems()
-    print(problems)
     find_categories = list(
         zip((category.category_id for category in problems), (category.category_ru for category in problems)))
     categories = []
@@ -158,7 +157,7 @@ def crete_category_keyboard(data_base_controller: MongoDataBaseRepositoryInterfa
         kp_builder.button(
             text=f'{emoji_dict.get(category[0], "❓") } {category[1]}',
             callback_data=CategoryBeliefsCallbackFactory(
-                category_id=str(category[0]).strip()[:15],
+                category_id=str(category[0]).strip()[:10], #FIXME
                 category_name_ru=str(category[1]).strip()[:30]
             ).pack()
         )
@@ -377,7 +376,15 @@ def leave_feedback_or_end_kb():
 
 def choose_gender_kb():
     kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
-    male_button: InlineKeyboardButton() = InlineKeyboardButton(text='Мужчина ♂️', callback_data='male')
-    female_button: InlineKeyboardButton() = InlineKeyboardButton(text = 'Женщина ♀️', callback_data='female')
+    male_button: InlineKeyboardButton = InlineKeyboardButton(text='Мужчина ♂️', callback_data='male')
+    female_button: InlineKeyboardButton = InlineKeyboardButton(text = 'Женщина ♀️', callback_data='female')
     kb_builder.row(male_button, female_button)
+    return kb_builder.as_markup()
+
+
+
+def back_to_menu():
+    kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    button: InlineKeyboardButton = InlineKeyboardButton(text='Дальше', callback_data='male')
+    kb_builder.row(button)
     return kb_builder.as_markup()

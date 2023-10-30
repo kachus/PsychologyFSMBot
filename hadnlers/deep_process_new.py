@@ -2,7 +2,7 @@ import os
 import time
 import datetime
 from asyncio import sleep
-
+from typing import Any, Dict
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
 from aiogram.types import (
@@ -37,6 +37,7 @@ bot = Bot(token=config.tg_bot.token)
 
 router = Router()
 new_data = {}
+
 
 
 class FSMQuestionForm(StatesGroup):
@@ -85,6 +86,13 @@ async def start_practise(callback: CallbackQuery,
     #                                                                           belief_id=callback_data.belief_id)
     # belief.last_date = datetime.datetime.now()
     # замерям начальное время прохождения
+
+    #получаем пол пользователя
+    data = await state.get_data()
+    gender = data['gender']
+
+
+
     measure_time = PassingPeriod(
         start_time=datetime.datetime.now().time().strftime("%H:%M:%S")
     )
@@ -98,14 +106,17 @@ async def start_practise(callback: CallbackQuery,
     dialog.messages.append(DialogMessage(
         number=len(dialog.messages) + 1,
         time=callback.message.date.time().strftime("%H:%M:%S"),
-        bot_question=LEXICON_RU['prepare_for_practice'],
+        bot_question=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
+        # bot_question=LEXICON_RU.get(gender.get(['prepare_for_practice']),'key error'),
         step=str(await state.get_state())
     ))
-    # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU['prepare_for_practice'],
+    # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
     #                        reply_markup=kb)
     # Отправляем голосовое
+
     await bot.send_voice(voice=FSInputFile(get_file_path('prepare_for_practice')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['prepare_for_practice'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
+                         # caption=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
                          reply_markup=kb)
 
     await state.update_data(dialog=dialog, belief_id=callback_data.belief_id)
@@ -117,9 +128,12 @@ async def relax_command(callback: CallbackQuery,
                         bot: Bot,
                         data_base,
                         state: FSMContext):
-    print()
+
+    data = await state.get_data()
+    gender = data['gender']
+
     kb = create_futher_kb()
-    for num, text in enumerate(LEXICON_RU['instruction_relax']):
+    for num, text in enumerate(LEXICON_RU.get(gender, 'key error').get('instruction_relax', 'key error')):
         file_path = get_file_path(f'instruction_relax_{num}')
         await bot.send_voice(voice=FSInputFile(file_path), chat_id=callback.from_user.id,
                              caption=text,
@@ -130,11 +144,11 @@ async def relax_command(callback: CallbackQuery,
 
     await bot.send_message(chat_id=callback.from_user.id,
                            text='Если ты чувствуешь расслабление, то нажми "К следующему шагу"', reply_markup=kb)
-    # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU['instruction_relax'], reply_markup=kb)
+    # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU.get(gender, 'key error').get('instruction_relax', 'key error'), reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date.time(),
-                          bot_question=LEXICON_RU['instruction_relax'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('instruction_relax', 'kb key error'),
                           )  # TODO надо ли логировать инструкции?
     await state.set_state(FSMQuestionForm.remember_feeling_state)
 
@@ -146,15 +160,17 @@ async def remember_struggle_process(callback: CallbackQuery,
                                     data_base, ):
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['remember_struggle'], reply_markup=kb)
+    #                        text=LEXICON_RU.get(gender, 'key error').get('remember_struggle', 'key error'), reply_markup=kb)
+    data = await state.get_data()
+    gender = data['gender']
 
     await bot.send_voice(voice=FSInputFile(get_file_path('remember_struggle')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['remember_struggle'],
+                         caption=LEXICON_RU.get(gender, 'kb error').get('remember_struggle', 'kb error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['remember_struggle'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('remember_struggle', 'key error'),
                           )
     await state.set_state(FSMQuestionForm.struggle_details)
 
@@ -164,16 +180,20 @@ async def process_audio_response(message: Message,
                                  bot: Bot,
                                  data_base,
                                  state: FSMContext):
+    data = await state.get_data()
+    gender = data['gender']
+
+
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
     file_path = file.file_path
     file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
     await bot.download_file(file_path, destination=file_on_disk.as_posix())
     # FIXME добавить апдейт в бд текст из аудио. сейчас на каждый ответ своя запись?
-
+    print(file_on_disk)
     await add_dialog_data(state,
                           message_time=message.date,
-                          bot_question=LEXICON_RU['remember_struggle'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('remember_struggle', 'key error'),
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix())
                           )
 
@@ -188,15 +208,18 @@ async def process_next_step(callback: CallbackQuery,
                             data_base, ):
     await state.set_state(FSMQuestionForm.struggle_details_continue)
     kb = create_futher_kb()
+
+    data = await state.get_data()
+    gender = data['gender']
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['struggle_details'], reply_markup=kb)
+    #                        text=LEXICON_RU.get(gender, 'key error').get('struggle_details', 'key error'), reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('struggle_details')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['struggle_details'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('struggle_details', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['struggle_details'],
+                          bot_question=LEXICON_RU.get(gender, 'key error',).get('struggle_details'),
                           )
 
 
@@ -229,18 +252,21 @@ async def process_next_step(callback: CallbackQuery,
                             state: FSMContext,
                             bot: Bot,
                             data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.emotions_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['struggle_details_continue'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('struggle_details_continue', 'key error'),
     #                        reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('struggle_details_continue')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['struggle_details_continue'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('struggle_details_continue', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['struggle_details_continue']
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('struggle_details_continue', 'key error')
                           )
 
 
@@ -249,18 +275,21 @@ async def process_next_emotions(callback: CallbackQuery,
                                 state: FSMContext,
                                 bot: Bot,
                                 data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.body_feelings_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['enhance_emotions'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('enhance_emotions', 'key error'),
     #                        reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('enhance_emotions')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['enhance_emotions'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('enhance_emotions', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['enhance_emotions']
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('enhance_emotions', 'key error')
                           )
 
 
@@ -278,12 +307,14 @@ async def process_struggle_continue(message: Message,
 
     # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
+    data = await state.get_data()
+    gender = data['gender']
 
     # Добавляем в стейт
     print(file_on_disk.as_posix())
     await add_dialog_data(state,
                           message_time=message.date,
-                          bot_question=LEXICON_RU['enhance_emotions'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('enhance_emotions', 'key error'),
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
                           )
     os.remove(path=file_on_disk)
@@ -294,18 +325,21 @@ async def process_next_emotions(callback: CallbackQuery,
                                 state: FSMContext,
                                 bot: Bot,
                                 data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.emotion_visualization_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['body_response'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('body_response', 'key error'),
     #                        reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('body_response')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['body_response'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('body_response', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['body_response']
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('body_response', 'key error')
                           )
 
 
@@ -339,15 +373,18 @@ async def process_next_emotions(callback: CallbackQuery,
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.question_root_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['root_struggle_question'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('root_struggle_question', 'key error'),
     #                        reply_markup=kb)
+    data = await state.get_data()
+    gender = data['gender']
+
     await bot.send_voice(voice=FSInputFile(get_file_path('root_struggle_question')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['root_struggle_question'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('root_struggle_question', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['root_struggle_question']
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('root_struggle_question', 'key error')
                           )
 
 
@@ -380,14 +417,17 @@ async def process_next_emotions(callback: CallbackQuery,
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.find_root_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['find_the_root_of_struggle'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('find_the_root_of_struggle', 'key error'),
     #                        reply_markup=kb)
+    data = await state.get_data()
+    gender = data['gender']
+
     await bot.send_voice(voice=FSInputFile(get_file_path('find_the_root_of_struggle')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['find_the_root_of_struggle'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('find_the_root_of_struggle', 'key error'),
                          reply_markup=kb)
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['find_the_root_of_struggle'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('find_the_root_of_struggle', 'key error'),
                           )
 
 
@@ -416,18 +456,21 @@ async def process_next_emotions(callback: CallbackQuery,
                                 state: FSMContext,
                                 bot: Bot,
                                 data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.proceed_emotion_root_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['get_rid_of_emotion'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('get_rid_of_emotion', 'key error'),
     #                        reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('get_rid_of_emotion')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['get_rid_of_emotion'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('get_rid_of_emotion', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['get_rid_of_emotion'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('get_rid_of_emotion', 'key error'),
                           )
 
 
@@ -457,18 +500,22 @@ async def process_next_emotions(callback: CallbackQuery,
                                 state: FSMContext,
                                 bot: Bot,
                                 data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
+
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.destroy_emotion_state)
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['find_reason'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('find_reason', 'key error'),
     #                        reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('find_reason')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['find_reason'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('find_reason', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['find_reason'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('find_reason', 'key error'),
                           )
 
 
@@ -477,18 +524,21 @@ async def process_query(callback: CallbackQuery,
                         state: FSMContext,
                         bot: Bot,
                         data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.root_event_contine)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
-    #                        text=LEXICON_RU['deep_struggle_root'],
+    #                        text=LEXICON_RU.get(gender, 'key error').get('deep_struggle_root', 'key error'),
     #                        reply_markup=kb)
     await bot.send_voice(voice=FSInputFile(get_file_path('deep_struggle_root')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['deep_struggle_root'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('deep_struggle_root', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['deep_struggle_root'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('deep_struggle_root', 'key error'),
                           )
 
 
@@ -518,19 +568,22 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.child_figure_state)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['deep_sttruggle_situation'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('deep_sttruggle_situation', 'key error'))
     # fixme handler is not working
     await bot.send_voice(voice=FSInputFile(get_file_path('deep_sttruggle_situation')), chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['deep_sttruggle_situation'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('deep_sttruggle_situation', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['deep_sttruggle_situation'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('deep_sttruggle_situation', 'key error'),
                           )
 
 
@@ -581,19 +634,22 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.child_figure_continue_state)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['dialogue_adult_enhace_continue'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('dialogue_adult_enhace_continue', 'key error'))
     await bot.send_voice(voice=FSInputFile(get_file_path('dialogue_adult_enhace_continue')),
                          chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['dialogue_adult_enhace_continue'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('dialogue_adult_enhace_continue', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['dialogue_adult_enhace_continue'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_adult_enhace_continue', 'key error'),
 
                           )
 
@@ -603,19 +659,22 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.parent_figure_continue_state)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['dialogue_to_kid'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('dialogue_to_kid', 'key error'))
     await bot.send_voice(voice=FSInputFile(get_file_path('dialogue_to_kid')),
                          chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['dialogue_to_kid'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('dialogue_to_kid', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['dialogue_to_kid'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_to_kid', 'key error'),
 
                           )
 
@@ -667,19 +726,22 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.dialogue_conclusion_state)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['dialogue_to_adult_response'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('dialogue_to_adult_response', 'key error'))
     await bot.send_voice(voice=FSInputFile(get_file_path('dialogue_to_adult_response')),
                          chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['dialogue_to_adult_response'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('dialogue_to_adult_response', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['dialogue_to_adult_response'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_to_adult_response', 'key error'),
 
                           )
 
@@ -691,16 +753,20 @@ async def process_message(callback: CallbackQuery,
                           data_base, ):
     await state.set_state(FSMQuestionForm.peace_between_state)
     kb = create_futher_kb()
+
+    data = await state.get_data()
+    gender = data['gender']
+
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['dialogue_to_kid_response'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('dialogue_to_kid_response', 'key error'))
     await bot.send_voice(voice=FSInputFile(get_file_path('dialogue_to_kid_response')),
                          chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['dialogue_to_kid_response'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('dialogue_to_kid_response', 'key error'),
                          reply_markup=kb)
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['dialogue_to_kid_response'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_to_kid_response', 'key error'),
 
                           )
 
@@ -730,18 +796,21 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.relaxation_state)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['peace_dialogue'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('peace_dialogue', 'key error'))
     await bot.send_voice(voice=FSInputFile(get_file_path('peace_dialogue')),
                          chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['peace_dialogue'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('peace_dialogue', 'key error'),
                          reply_markup=kb)
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['peace_dialogue'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('peace_dialogue', 'key error'),
                           )
 
 
@@ -771,19 +840,22 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.new_belife_deeper_state)
     kb = create_futher_kb()
     # await bot.send_message(chat_id=callback.message.chat.id,
     #                        reply_markup=kb,
-    #                        text=LEXICON_RU['kid_adult_response'])
+    #                        text=LEXICON_RU.get(gender, 'key error').get('kid_adult_response', 'key error'))
     await bot.send_voice(voice=FSInputFile(get_file_path('kid_adult_response')),
                          chat_id=callback.from_user.id,
-                         caption=LEXICON_RU['kid_adult_response'],
+                         caption=LEXICON_RU.get(gender, 'key error').get('kid_adult_response', 'key error'),
                          reply_markup=kb)
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['kid_adult_response'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('kid_adult_response', 'key error'),
                           )
 
 
@@ -812,21 +884,24 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.new_beliefe_upper_state)
     kb = create_futher_kb()
     try:
         await bot.send_voice(voice=FSInputFile(get_file_path('new_belief_upper_response_1')),
                              chat_id=callback.from_user.id,
-                             caption=LEXICON_RU['new_belief_upper_response_1'],
+                             caption=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1', 'key error'),
                              reply_markup=kb)
     except Exception as e:
         await bot.send_message(chat_id=callback.message.chat.id,
                                reply_markup=kb,
-                               text=LEXICON_RU['new_belief_upper_response_1'])
+                               text=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1', 'key error'))
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU['new_belief_upper_response_1'],
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1', 'key error'),
 
                           )
 
@@ -859,15 +934,19 @@ async def process_message(callback: CallbackQuery,
                           data_base, ):
     await state.set_state(FSMQuestionForm.new_beliefe_upper_state_continue)
     kb = create_futher_kb()
+
+    data = await state.get_data()
+    gender = data['gender']
+
     try:
         await bot.send_voice(voice=FSInputFile(get_file_path('new_belief_upper_response_2')),
                              chat_id=callback.from_user.id,
-                             caption=LEXICON_RU['new_belief_upper_response_2'],
+                             caption=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_2', 'key error'),
                              reply_markup=kb)
     except Exception as e:
         await bot.send_message(chat_id=callback.message.chat.id,
                                reply_markup=kb,
-                               text=LEXICON_RU['new_belief_upper_response_2'])
+                               text=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_2', 'key error'))
 
 
 @router.message(FSMQuestionForm.new_beliefe_upper_state_continue,
@@ -898,17 +977,20 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
+    data = await state.get_data()
+    gender = data['gender']
+
     await state.set_state(FSMQuestionForm.new_believe_formualtion_state)
     kb = create_futher_kb()
     try:
         await bot.send_voice(voice=FSInputFile(get_file_path('conclusion_practise')),
                              chat_id=callback.from_user.id,
-                             caption=LEXICON_RU['conclusion_practise'],
+                             caption=LEXICON_RU.get(gender, 'key error').get('conclusion_practise', 'key error'),
                              reply_markup=kb)
     except Exception as e:
         await bot.send_message(chat_id=callback.message.chat.id,
                                reply_markup=kb,
-                               text=LEXICON_RU['conclusion_practise'])
+                               text=LEXICON_RU.get(gender, 'key error').get('conclusion_practise', 'key error'))
 
 
 @router.message(FSMQuestionForm.new_believe_formualtion_state,
