@@ -11,6 +11,7 @@ from aiogram.types import (
     InlineQuery, FSInputFile
 )
 
+from container import root_dir
 from keyboards.callback_fabric import StartBeliefsFactory
 
 from BD.DBinterface import ClientRepository, MongoDataBaseRepositoryInterface
@@ -20,9 +21,10 @@ from aiogram.enums import ContentType
 from aiogram import Bot, F, Router
 from pathlib import Path
 
-from services.services import save_answer, add_dialog_data, get_data_to_save, get_audio_duration
+from services.services import save_answer, add_dialog_data, get_data_to_save, get_audio_duration, load_voice_messages
 from services.speech_processer import speech_to_voice_with_path
-from keyboards.inline_keyboards import create_futher_kb, leave_feedback_or_end_kb, create_define_way_male
+from keyboards.inline_keyboards import create_futher_kb, leave_feedback_or_end_kb, create_define_way_male, \
+    create_define_way
 from config_data.config import load_config
 from services.services import save_answer
 
@@ -37,7 +39,6 @@ bot = Bot(token=config.tg_bot.token)
 
 router = Router()
 new_data = {}
-
 
 
 class FSMQuestionForm(StatesGroup):
@@ -81,18 +82,8 @@ async def start_practise(callback: CallbackQuery,
                          callback_data: StartBeliefsFactory,
                          data_base,
                          state: FSMContext):
-    # Загружаем данные из по загону из базы по пользхователю и ID. В конце диалога ставим счетчик +1 для загона
-    # belief: Belief = data_base.client_repository.get_user_belief_by_belief_id(user_telegram_id=callback.message.chat.id,
-    #                                                                           belief_id=callback_data.belief_id)
-    # belief.last_date = datetime.datetime.now()
-    # замерям начальное время прохождения
-
-    #получаем пол пользователя
-    data = await state.get_data()
-    gender = data['gender']
-
-
-
+    # получаем пол пользователя из базы данных
+    gender = data_base.client_repository.get_user_gender(user_telegram_id=callback.message.chat.id)
     measure_time = PassingPeriod(
         start_time=datetime.datetime.now().time().strftime("%H:%M:%S")
     )
@@ -110,16 +101,13 @@ async def start_practise(callback: CallbackQuery,
         # bot_question=LEXICON_RU.get(gender.get(['prepare_for_practice']),'key error'),
         step=str(await state.get_state())
     ))
-    # await bot.send_message(chat_id=callback.from_user.id, text=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
-    #                        reply_markup=kb)
-    # Отправляем голосовое
 
     await bot.send_voice(voice=FSInputFile(get_file_path('prepare_for_practice')), chat_id=callback.from_user.id,
                          caption=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
                          # caption=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
                          reply_markup=kb)
 
-    await state.update_data(dialog=dialog, belief_id=callback_data.belief_id)
+    await state.update_data(dialog=dialog, belief_id=callback_data.belief_id, gender=gender)
     await state.set_state(FSMQuestionForm.prepare_state)
 
 
@@ -128,7 +116,6 @@ async def relax_command(callback: CallbackQuery,
                         bot: Bot,
                         data_base,
                         state: FSMContext):
-
     data = await state.get_data()
     gender = data['gender']
 
@@ -183,14 +170,7 @@ async def process_audio_response(message: Message,
     data = await state.get_data()
     gender = data['gender']
 
-
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    # FIXME добавить апдейт в бд текст из аудио. сейчас на каждый ответ своя запись?
-    print(file_on_disk)
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     await add_dialog_data(state,
                           message_time=message.date,
                           bot_question=LEXICON_RU.get(gender, 'key error').get('remember_struggle', 'key error'),
@@ -219,7 +199,7 @@ async def process_next_step(callback: CallbackQuery,
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU.get(gender, 'key error',).get('struggle_details'),
+                          bot_question=LEXICON_RU.get(gender, 'key error', ).get('struggle_details'),
                           )
 
 
@@ -229,14 +209,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.struggle_details_continue)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-
-    # FIXME добавить апдейт в бд текст из аудио
-    "update data in db"
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     # Добовляем в стейт данные
     await add_dialog_data(state,
                           message_time=message.date,
@@ -299,11 +272,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.emotions_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
 
     # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
@@ -349,11 +318,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.body_feelings_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
 
@@ -394,11 +359,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.emotion_visualization_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
 
     # FIXME добавить апдейт в бд текст из аудио
     await add_dialog_data(state,
@@ -427,7 +388,8 @@ async def process_next_emotions(callback: CallbackQuery,
                          reply_markup=kb)
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU.get(gender, 'key error').get('find_the_root_of_struggle', 'key error'),
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('find_the_root_of_struggle',
+                                                                               'key error'),
                           )
 
 
@@ -437,11 +399,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.question_root_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -480,11 +438,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.find_root_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
 
@@ -502,7 +456,6 @@ async def process_next_emotions(callback: CallbackQuery,
                                 data_base, ):
     data = await state.get_data()
     gender = data['gender']
-
 
     kb = create_futher_kb()
     await state.set_state(FSMQuestionForm.destroy_emotion_state)
@@ -548,11 +501,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.destroy_emotion_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -593,11 +542,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.root_event_contine)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
 
@@ -615,13 +560,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.child_figure_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
-    "update data in db"
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -649,7 +588,8 @@ async def process_message(callback: CallbackQuery,
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_adult_enhace_continue', 'key error'),
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_adult_enhace_continue',
+                                                                               'key error'),
 
                           )
 
@@ -685,12 +625,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.child_figure_continue_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -706,11 +641,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.parent_figure_continue_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -741,7 +672,8 @@ async def process_message(callback: CallbackQuery,
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_to_adult_response', 'key error'),
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('dialogue_to_adult_response',
+                                                                               'key error'),
 
                           )
 
@@ -777,11 +709,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.dialogue_conclusion_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
 
     await add_dialog_data(state,
                           message_time=message.date,
@@ -820,11 +748,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.peace_between_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -865,11 +789,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_belife_deeper_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
 
     await add_dialog_data(state,
                           message_time=message.date,
@@ -892,7 +812,8 @@ async def process_message(callback: CallbackQuery,
     try:
         await bot.send_voice(voice=FSInputFile(get_file_path('new_belief_upper_response_1')),
                              chat_id=callback.from_user.id,
-                             caption=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1', 'key error'),
+                             caption=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1',
+                                                                             'key error'),
                              reply_markup=kb)
     except Exception as e:
         await bot.send_message(chat_id=callback.message.chat.id,
@@ -901,7 +822,8 @@ async def process_message(callback: CallbackQuery,
 
     await add_dialog_data(state,
                           message_time=callback.message.date,
-                          bot_question=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1', 'key error'),
+                          bot_question=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_1',
+                                                                               'key error'),
 
                           )
 
@@ -912,13 +834,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_beliefe_upper_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
-    "update data in db"
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -941,7 +857,8 @@ async def process_message(callback: CallbackQuery,
     try:
         await bot.send_voice(voice=FSInputFile(get_file_path('new_belief_upper_response_2')),
                              chat_id=callback.from_user.id,
-                             caption=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_2', 'key error'),
+                             caption=LEXICON_RU.get(gender, 'key error').get('new_belief_upper_response_2',
+                                                                             'key error'),
                              reply_markup=kb)
     except Exception as e:
         await bot.send_message(chat_id=callback.message.chat.id,
@@ -956,12 +873,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_beliefe_upper_state_continue)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     "update data in db"
 
     await add_dialog_data(state,
@@ -1000,13 +912,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_believe_formualtion_state)
-    file_id = message.voice.file_id
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
-    print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
-    "update data in db"
+    file_on_disk = await load_voice_messages(message, bot, root_dir)
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -1049,34 +955,38 @@ async def process_message(message: Message,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
-    if F.content_type.in_({ContentType.VOICE, ContentType.AUDIO}):
-        file_id = message.voice.file_id
-        file = await bot.get_file(file_id)
-        file_path = file.file_path
-        file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-        await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    if message.content_type in ['audio', 'voice']:
+
+        file_on_disk = await load_voice_messages(message, bot, root_dir)
         await add_dialog_data(state,
                               message_time=message.date,
                               bot_question='Отзыв',
-                              user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
+                              user_answer=speech_to_voice_with_path(file_path=file_on_disk),
 
                               )
         os.remove(path=file_on_disk)
-    else:
+        print()
+    elif message.content_type in ['text']:
         await add_dialog_data(state,
                               message_time=message.date,
                               bot_question='Отзыв',
                               user_answer=message.text
                               )
+        print()
+    else:
+        await message.answer(text='Чтобы отравить отзыв запиши голосовое или напиши текстом')
+        await state.set_state(FSMQuestionForm.process_feedback_state)
 
+    print()
     data = await state.get_data()
     dialog: Dialog = data.get('dialog')
     belief_id = data.get('belief_id')
+    print()
     data_base.client_repository.save_belief_data(dialog=dialog,
                                                  user_telegram_id=message.from_user.id,
                                                  belief_id=belief_id)
 
-    inline_keyboard = create_define_way_male(database=data_base,
+    inline_keyboard = create_define_way(database=data_base,
                                         user_telegram_id=message.chat.id)
     await message.reply(text='Спасибо за отзыв!')
     await sleep(1)
@@ -1090,7 +1000,7 @@ async def process_message(callback: CallbackQuery,
                           state: FSMContext,
                           bot: Bot,
                           data_base, ):
-    inline_keyboard = create_define_way_male(database=data_base,
+    inline_keyboard = create_define_way(database=data_base,
                                         user_telegram_id=callback.message.chat.id)
     data = await state.get_data()
     dialog: Dialog = data.get('dialog')

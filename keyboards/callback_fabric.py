@@ -2,14 +2,14 @@ from aiogram.filters.callback_data import CallbackData
 
 
 # TODO: Добавить название убежджения
-class CommonBeliefsCallbackFactory(CallbackData, prefix='chose_common_beliefs'):
+class CommonBeliefsCallbackFactory(CallbackData, prefix='chose_beliefs'):
     belief_id: int
     category_id: str
     sex: str
     category_name_ru: str
 
 
-class CategoryBeliefsCallbackFactory(CallbackData, prefix='category_common_beliefs'):
+class CategoryBeliefsCallbackFactory(CallbackData, prefix='beliefs_category'):
     category_id: str
     category_name_ru: str
 

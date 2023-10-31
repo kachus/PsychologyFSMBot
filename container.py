@@ -1,6 +1,7 @@
 # Контейнер для Dependency Injection. В этом контейнере инициализируются все классы
 # _________________________________
 import logging
+import os
 
 from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM, \
     MongoProblemsRepositoryORM, MongoDataBaseRepository, MongoORMConnection
@@ -20,3 +21,5 @@ problem_repo = MongoProblemsRepositoryORM()
 # Создаем общий репозиторий
 data_base_controller = MongoDataBaseRepository(client_repository=client_repo,
                                                problem_repository=problem_repo)
+#Путь к корневой папке относительно файла container. Так жк нормализую путь для соответсвия на разных системах
+root_dir = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))

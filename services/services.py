@@ -48,12 +48,16 @@ async def save_answer(message: Message,
         print(e.message, "\n что то пошло не так при сохранении ответа")
 
 
-async def load_voice_messages(message: Message, bot: Bot):
+async def load_voice_messages(message: Message, bot: Bot, root_dir:str):
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
     file_path = file.file_path
-    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
-    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    file_on_disk = os.path.normpath(os.path.join(root_dir, 'user_voices', f"{file_id}.ogg"))
+    folder_path = os.path.dirname(file_on_disk)
+    if not os.path.exists(folder_path):
+        # Если папка не существует, создаем ее
+        os.makedirs(folder_path)
+    await bot.download_file(file_path, destination=file_on_disk)
     return file_on_disk
 
 

@@ -150,13 +150,19 @@ emoji_dict = {
     "girls": "👧👩",
     "ex": "💔",
     "tasks": "📝",
-    " money ": "💰",
+    "money": "💰",
     "society": "🌍",
     "parents": "👪",
     "school": "🏫",
     "other": "🗂️",
     "core_issues": "💡",
-    "self_estim": "🤗"
+    "control": "😌",
+    "relationship": "❤",
+    "professional": "💼",
+    "self_estim": "🤗",
+    "family": " 👨‍👩‍👦",
+    "fears": "😱",
+    "mood": "😄",
 }
 
 keyboards_text = {

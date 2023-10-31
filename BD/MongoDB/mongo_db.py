@@ -32,7 +32,12 @@ class MongoClientUserRepositoryORM(ClientRepository):
         user_to_update.save()
         print('сохранен пол:', gender)
 
-
+    @staticmethod
+    def get_user_gender(user_telegram_id: int) -> str:
+        user = Client.objects(telegram_id=user_telegram_id).get()
+        gender = user.gender
+        print('пол того кто прорабатывает:', gender )
+        return gender
     @staticmethod
     def save_all_client_answers_by_id(user_telegram_id: int, answers: dict) -> None:
         user_to_update = Client.objects(telegram_id=user_telegram_id).get()
@@ -130,6 +135,7 @@ class MongoClientUserRepositoryORM(ClientRepository):
 
     @staticmethod
     def save_belief_data(dialog: Dialog, user_telegram_id: int, belief_id: int):
+        print()
         dialog.executed_time.end_time = datetime.now().time().strftime("%H:%M:%S")
         user = Client.objects(telegram_id=user_telegram_id).get()
         user_beliefs = user.beliefs
