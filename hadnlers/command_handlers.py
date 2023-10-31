@@ -1,60 +1,144 @@
 # Все хэндлеры с командами тут
 # ______________________________________________
+import os
 from datetime import datetime
 
-from aiogram.filters import Command, CommandStart
-
+from aiogram.filters import  CommandStart
+from pathlib import Path
 from aiogram.fsm.context import FSMContext
+from BD.MongoDB.mongo_enteties import Problem, Client
+from services.speech_processer import speech_to_voice_with_path
 from aiogram.filters.state import State, StatesGroup
-from services.services import save_answer
-from aiogram.types import Message, CallbackQuery
+from BD.MongoDB.datat_enteties import Belief
+from aiogram.enums import ContentType
+from aiogram.types import Message, CallbackQuery, InputFile, FSInputFile
 
 from BD.DBinterface import MongoDataBaseRepositoryInterface
-from BD.MongoDB.mongo_enteties import Client
+
 from keyboards.callback_fabric import CategoryBeliefsCallbackFactory, CommonBeliefsCallbackFactory
-from keyboards.inline_keyboards import create_problem_chose_keyboard, create_define_way, \
-    crete_category_keyboard_chose_belief_for_man, crete_keyboard_chose_belief_for_man, create_start_practice_kb
-from keyboards.keyboard_ru import futher_or_back, start_define_believes_kb
+from keyboards.inline_keyboards import  \
+    create_define_way,create_start_practice_kb, choose_gender_kb,  \
+    create_keyboard_chose_belief, crete_category_keyboard, back_to_menu
+
+
+
 from aiogram import Bot, F, Router, html
 
 from services.services import save_user_if_not_exist
 # загрузка сценария шагов по сценарию "Определить убедждение"
-from states.define_belif import FSMQuestionForm
+from BD.MongoDB.mongo_enteties import Client
 
 router = Router()
 
 
+class FSMCommonCommands(StatesGroup):
+    gender = State()
+    own_struggle = State()
+
+
+
+# #
+# @router.message(CommandStart())
+# async def command_start(message: Message,bot: Bot, state: FSMContext, data_base: MongoDataBaseRepositoryInterface):
+#     # Если пользователя нет в базе данных, то сохраняем в БД
+#     await save_user_if_not_exist(message, data_base)
+#     #Клавиатура принимает id чата для того чтобы определить был он или нет в базе
+#     inline_keyboard = create_define_way(database=data_base,
+#                                         user_telegram_id=message.chat.id)
+#     # await message.answer('Привет! Этот бот поможет разобраться тебе с твоими загонами!', reply_markup=inline_keyboard)
+#     inline_keyboard = create_define_way(database=data_base,
+#                                         user_telegram_id=message.chat.id)
+#     await message.answer('Привет! Этот бот поможет разобраться тебе с твоими загонами!', reply_markup=inline_keyboard)
+#
+#     # Отправка анимации в сообщении
+
+
+
 @router.message(CommandStart())
-async def command_start(message: Message, state: FSMContext, data_base: MongoDataBaseRepositoryInterface):
-    # await state.set_state(FSMChoseScenario.enter_scenario)
-    # Если пользователя нет в базе данных, то сохраняем в БД
+async def initial_keyboard(message: Message,bot: Bot, data_base: MongoDataBaseRepositoryInterface):
     await save_user_if_not_exist(message, data_base)
-    inline_keyboard = create_define_way()
-    await message.answer('Привет! Этот бот поможет разобраться тебе с твоими загонами!', reply_markup=inline_keyboard)
+    #Клавиатура принимает id чата для того чтобы определить был он или нет в базе
+    keyboard = choose_gender_kb()
+    await bot.send_message(chat_id=message.chat.id,
+                           text='Привет! Этот бот поможет разобраться тебе с твоими загонами! ⚡\nВыбери свой пол',
+                           reply_markup=keyboard)
 
 
-# @router.message(FSMQuestionForm.enter_scenario, F.text.startswith('Поехали'))
-# async def enter_define_belief_scenario(message:Message, state:FSMContext, data_base:MongoDataBaseRepositoryInterface):
-#     # await state.set_state(FSMQuestionForm.start_define_believes)
-#     await message.answer('Опиши свою проблему в одном сообщении', reply_markup=futher_or_back)
-#     belief_kb = create_problem_chose_keyboard(data_base)
-#     await state.set_state(FSMQuestionForm.start_define_believes)
 
-@router.callback_query(F.data == 'tell_beliefs')
-async def process_tell_beliefs_command(callback: CallbackQuery):
-    ...
+@router.callback_query(F.data.contains('male')) #тут выдается главная клавиатура
+async def process_male_gender(callback: CallbackQuery, bot: Bot, data_base: MongoDataBaseRepositoryInterface,
+                              state: FSMContext):
+    inline_keyboard = create_define_way(database=data_base,
+                                        user_telegram_id=callback.message.chat.id)
+    if callback.data == 'female':
+        data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='female')
+    elif callback.data == 'male':
+        data_base.client_repository.update_gender(user_id=callback.message.chat.id, gender='male')
+
+    await state.update_data(gender=callback.data)
+
+    await bot.edit_message_text(chat_id=callback.message.chat.id,
+                                message_id=callback.message.message_id,
+                                text='Выбери подходящую команду',
+                                reply_markup=inline_keyboard)
 
 
 @router.callback_query(F.data == 'chose_beliefs')
 async def process_chose_beliefs_category(callback: CallbackQuery,
                                          bot: Bot,
-                                         data_base):
-    keyboard = crete_category_keyboard_chose_belief_for_man(data_base)
+                                         data_base,
+                                         state: FSMContext):
+    kb = crete_category_keyboard(user_id=callback.message.chat.id, data_base_controller = data_base)
+    print('chosing category')
+
     await bot.edit_message_text(chat_id=callback.message.chat.id,
                                 message_id=callback.message.message_id,
                                 text="Выбери категорию",
-                                reply_markup=keyboard)
-    # await callback.message.answer("Выбери категорию", reply_markup=keyboard)
+                                reply_markup=kb)
+
+
+@router.callback_query(F.data == 'tell_beliefs')
+async def process_tell_beliefs_command(callback: CallbackQuery,
+                                       bot: Bot,
+                                       data_base,
+                                       state: FSMContext):
+    kb = back_to_menu()
+
+    await bot.send_message(chat_id=callback.message.chat.id,text='Расскажи свой загон! Ты можешь сделать это текстом, а также можешь записать'
+                                'аудио сообщение. Нажми "Дальше", когда закончишь', reply_markup=kb)
+    await state.set_state(FSMCommonCommands.own_struggle)
+
+
+
+@router.message(FSMCommonCommands.own_struggle, F.content_type.in_({ContentType.VOICE}))
+async def process_personal_struggle_voice(message: Message,
+                                          bot: Bot,
+                                          state: FSMContext,
+                                          data_base):
+
+    await state.set_state(FSMCommonCommands.own_struggle)
+
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    file_on_disk = Path(Path.cwd(), 'user_voices', f"{file_id}.ogg")
+    print(file_on_disk)
+    await bot.download_file(file_path, destination=file_on_disk.as_posix())
+    user_answer = speech_to_voice_with_path(file_path=file_on_disk.as_posix())
+    os.remove(path=file_on_disk)
+
+
+
+@router.message(FSMCommonCommands.own_struggle,  F.content_type.in_({ContentType.TEXT}))
+async def process_own_struggle_text(message:Message,
+                                    bot: Bot,
+                                    state: FSMContext,
+                                    data_base):
+    user_answer = message.text
+    print(user_answer)
+    await state.set_state(FSMCommonCommands.own_struggle)
+
+
 
 
 @router.callback_query(CategoryBeliefsCallbackFactory.filter())
@@ -62,28 +146,43 @@ async def process_chose_belief(callback: CallbackQuery,
                                callback_data: CategoryBeliefsCallbackFactory,
                                bot: Bot,
                                data_base):
-    keyboard = crete_keyboard_chose_belief_for_man(category=callback_data.category_id,
-                                                   data_base_controller=data_base)
-    # await callback.message.answer()
 
+    keyboard = create_keyboard_chose_belief(data_base_controller=data_base, user_id=callback.message.chat.id,
+                                            category=callback_data.category_id,)
+    #тут нужно отобразить категорию в коллбэе  полностью и не нужен пол
     await bot.edit_message_text(chat_id=callback.message.chat.id,
                                 message_id=callback.message.message_id,
                                 text=f"Категория: <b>{callback_data.category_name_ru}</b>"
                                      f"\n\nВыбери загон", reply_markup=keyboard)
 
 
+
+# Если пользователь выбирает загон в этом сценарии то это новый загон
 @router.callback_query(CommonBeliefsCallbackFactory.filter())
 async def process_start_with_belief(callback: CallbackQuery,
                                     callback_data: CommonBeliefsCallbackFactory,
                                     bot: Bot,
                                     state: FSMContext,
                                     data_base):
+    # получаем загон по его id
+    print('belief_id:', callback_data.belief_id)
+    print(callback_data.belief_id)
+    belief = data_base.problem_repository.get_problem_by_problem_id(belief_id=callback_data.belief_id)
     await state.update_data(category=callback_data.category_name_ru)
-    keyboard = create_start_practice_kb()
-    #FIXME save category INTO DB
+    #Передаем в клавиатуру id загона
+    keyboard = create_start_practice_kb(callback_data.belief_id)
+    # сохраняем загон в базу данных для пользователя
+    new_belief = Belief(
+        belief=belief,
+        first_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        last_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dialogs=[]
+    )
+    data_base.client_repository.save_new_belief_to_user(user_telegram_id=callback.message.chat.id,
+                                                        belief=new_belief.to_dict())# конвертация в словарь для записи в базу
+
+
     await bot.send_message(chat_id=callback.message.chat.id,
-                           text=f"Ты выбрал загон: <b>{callback_data.category_name_ru}</b>"
+                           text=f"Ты выбрал(а) загон: <b>{belief.belief}</b>"
                                 f"\n\nНачнем работу?", reply_markup=keyboard)
-
-
-
+    # TODO: Сделать передачу данных с ID загона

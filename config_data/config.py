@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from environs import Env
 
 
-
 @dataclass
 class MongoDB:
     bd_name: str
     host: str
     port: int
+
 
 @dataclass
 class TgBot:
@@ -29,5 +29,3 @@ def load_config(path: str or None = None) -> Config:
                                     host=env('DB_HOST'),
                                     port=int(env('DB_PORT')))
                   )
-
-

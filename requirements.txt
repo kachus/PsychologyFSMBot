@@ -31,3 +31,5 @@ torch==2.0.1
 typing_extensions==4.7.1
 whisper==1.1.10
 yarl==1.9.2
+
+elevenlabs~=0.2.26
