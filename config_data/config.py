@@ -40,7 +40,7 @@ def load_config(path: str or None = None) -> Config:
     return Config(tg_bot=TgBot(token=env('BOT_TOKEN')),
                   data_base=MongoDB(bd_name=env('DATABASE'),
                                     local_port=env('MONGO_DB_LOCAL_PORT'),
-                                    local_host=int(env('MONGO_DB_LOCAL_HOST')),
+                                    local_host=env('MONGO_DB_LOCAL_HOST'),
                                     docker_port=(env('MONGO_DB_DOCKER_PORT')),
                                     docker_host=(env('MONGO_DB_DOCKER_HOST')),
                                     ),
