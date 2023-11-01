@@ -9,4 +9,4 @@ RUN apt-get update -y && apt-get upgrade -y && pip install --upgrade pip  \
 
 ENV PYTHONPATH $PYTHONPATH:.
 
-CMD ["pytho3", "bot.py"]
+CMD ["python3", "bot.py"]
