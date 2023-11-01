@@ -1,44 +1,37 @@
 import os
-import time
+
 import datetime
 from asyncio import sleep
-from typing import Any, Dict
+
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.state import State, StatesGroup
 from aiogram.types import (
     Message,
-    CallbackQuery,
-    InlineQuery, FSInputFile
+    CallbackQuery, FSInputFile
 )
 
 from container import root_dir
 from keyboards.callback_fabric import StartBeliefsFactory
 
-from BD.DBinterface import ClientRepository, MongoDataBaseRepositoryInterface
-from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM
-from BD.MongoDB.datat_enteties import Belief, Dialog, DialogMessage, PassingPeriod
+from BD.MongoDB.datat_enteties import Dialog, DialogMessage, PassingPeriod
 from aiogram.enums import ContentType
 from aiogram import Bot, F, Router
-from pathlib import Path
 
-from services.services import save_answer, add_dialog_data, get_data_to_save, get_audio_duration, load_voice_messages
+from services.services import add_dialog_data, get_audio_duration, load_voice_messages
 from services.speech_processer import speech_to_voice_with_path
-from keyboards.inline_keyboards import create_futher_kb, leave_feedback_or_end_kb, create_define_way_male, \
+from keyboards.inline_keyboards import create_futher_kb, leave_feedback_or_end_kb, \
     create_define_way
 from config_data.config import load_config
-from services.services import save_answer
 
 # загрузка сценария шагов по сценарию "Определить убедждение \ загон"
 from states.define_belif import FSMQuestionForm
 from lexicon.lexicon_ru import LEXICON_RU
 from voice.match_key_file import get_file_path
 
-# import keyboards
 config = load_config()
 bot = Bot(token=config.tg_bot.token)
 
 router = Router()
-new_data = {}
 
 
 class FSMQuestionForm(StatesGroup):
@@ -941,6 +934,7 @@ async def process_message(callback: CallbackQuery,
     await state.set_state(FSMQuestionForm.process_feedback_state)
     await bot.send_message(chat_id=callback.message.chat.id,
                            text='Можешь написать свой отзыв текстом тут или запись отзыв голосовым сообщением!')
+
 
 @router.message(FSMQuestionForm.process_feedback_state)
 async def process_message(message: Message,
