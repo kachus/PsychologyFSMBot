@@ -11,7 +11,7 @@ class MongoORMConnection:
     def __init__(self, mongo: MongoDB):
         connect(db=mongo.bd_name,
                 host=mongo.docker_host,
-                port=mongo.docker_port)
+                port=int(mongo.docker_port))
 
 
 class MongoClientUserRepositoryORM(ClientRepository):
