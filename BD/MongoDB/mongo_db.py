@@ -135,7 +135,6 @@ class MongoClientUserRepositoryORM(ClientRepository):
 
     @staticmethod
     def save_belief_data(dialog: Dialog, user_telegram_id: int, belief_id: int):
-        print()
         dialog.executed_time.end_time = datetime.now().time().strftime("%H:%M:%S")
         user = Client.objects(telegram_id=user_telegram_id).get()
         user_beliefs = user.beliefs

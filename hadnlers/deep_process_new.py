@@ -939,16 +939,8 @@ async def process_message(callback: CallbackQuery,
                           bot: Bot,
                           data_base, ):
     await state.set_state(FSMQuestionForm.process_feedback_state)
-    # data = await state.get_data()
-    # dialog: Dialog = data.get('dialog')
-    # belief_id = data.get('belief_id')
-    # data_base.client_repository.save_belief_data(dialog=dialog,
-    #                                              user_telegram_id=callback.from_user.id,
-    #                                              belief_id=belief_id)
-
     await bot.send_message(chat_id=callback.message.chat.id,
                            text='Можешь написать свой отзыв текстом тут или запись отзыв голосовым сообщением!')
-
 
 @router.message(FSMQuestionForm.process_feedback_state)
 async def process_message(message: Message,
@@ -965,23 +957,20 @@ async def process_message(message: Message,
 
                               )
         os.remove(path=file_on_disk)
-        print()
+
     elif message.content_type in ['text']:
         await add_dialog_data(state,
                               message_time=message.date,
                               bot_question='Отзыв',
                               user_answer=message.text
                               )
-        print()
+
     else:
         await message.answer(text='Чтобы отравить отзыв запиши голосовое или напиши текстом')
         await state.set_state(FSMQuestionForm.process_feedback_state)
-
-    print()
     data = await state.get_data()
     dialog: Dialog = data.get('dialog')
     belief_id = data.get('belief_id')
-    print()
     data_base.client_repository.save_belief_data(dialog=dialog,
                                                  user_telegram_id=message.from_user.id,
                                                  belief_id=belief_id)
