@@ -1,17 +1,13 @@
-from datetime import datetime
-
-from aiogram.filters import CommandStart
 
 from aiogram.fsm.context import FSMContext
 
 from aiogram.types import Message, CallbackQuery
 
-from BD.DBinterface import MongoDataBaseRepositoryInterface
+
 
 from keyboards.callback_fabric import CategoryBeliefsCallbackFactory, CommonBeliefsCallbackFactory, \
     ExistingBeliefsCallbackFactory
-from keyboards.inline_keyboards import create_define_way_male, \
-    crete_category_keyboard_chose_belief_for_man, crete_keyboard_chose_belief_for_man, create_start_practice_kb, \
+from keyboards.inline_keyboards import  create_start_practice_kb, \
     crete_keyboard_chose_existing_belief_for_man
 
 from aiogram import Bot, F, Router
@@ -52,4 +48,3 @@ async def process_start_with_existed_belief(callback: CallbackQuery,
     await bot.send_message(chat_id=callback.message.chat.id,
                            text=f"Ты выбрал загон: <b>{belief.belief}</b>"
                                 f"\n\nНачнем работу?", reply_markup=keyboard)
-
