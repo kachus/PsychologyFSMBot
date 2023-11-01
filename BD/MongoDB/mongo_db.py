@@ -1,21 +1,17 @@
-from dataclasses import dataclass
+
 from datetime import datetime
-
-from aiogram.fsm.context import FSMContext
-from environs import Env
 from mongoengine import connect, DoesNotExist
-
 from BD.DBinterface import ClientRepository, ProblemsRepository, MongoDataBaseRepositoryInterface
 from BD.MongoDB.datat_enteties import Belief, Dialog
 from BD.MongoDB.mongo_enteties import Client, Problem
 from config_data.config import MongoDB
 
-
+# TODO: Сюда можно всунуть пораждающий класс ( фабрика ) для создания конекта в зависимости от того где запущен бот ( докер, локал, сервер)
 class MongoORMConnection:
     def __init__(self, mongo: MongoDB):
         connect(db=mongo.bd_name,
-                host=mongo.host,
-                port=mongo.port)
+                host=mongo.docker_host,
+                port=mongo.docker_port)
 
 
 class MongoClientUserRepositoryORM(ClientRepository):

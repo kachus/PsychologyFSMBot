@@ -1,15 +1,11 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 import logging
-from BD.DBinterface import ClientRepository
-from BD.MongoDB.mongo_db import MongoClientUserRepositoryORM, MongoDB, MongoORMConnection
 from container import data_base_controller, config, logger
-# deep_process_new
-from hadnlers import command_handlers, define_belif_handlers, deep_process_handers, deep_process_new, chose_existing_belief_handlers, \
+from hadnlers import command_handlers, deep_process_new, \
+    chose_existing_belief_handlers, \
     show_statistic_handler
-# from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage, Redis
-from config_data.config import Config, load_config
 
 
 async def main():
@@ -21,10 +17,9 @@ async def main():
 
     # info about starting the bot
     logger.info('Starting bot')
-    redis = Redis(host='localhost')
-    storage: RedisStorage() = RedisStorage(redis=redis)
-
-    # storage: MemoryStorage = MemoryStorage()
+    redis = Redis(host=config.redis_storage.docker_host,
+                  port=config.redis_storage.docker_port)
+    storage: RedisStorage = RedisStorage(redis=redis)
 
     bot: Bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 
@@ -52,4 +47,3 @@ if __name__ == '__main__':
         logger.error('Bot stopped!')
         # Выводим в консоль сообщение об ошибке,
         # если получены исключения KeyboardInterrupt или SystemExit
-
