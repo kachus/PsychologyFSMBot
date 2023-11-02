@@ -23,7 +23,7 @@ async def main():
 
     bot: Bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 
-    dp = Dispatcher(data_base=data_base_controller)
+    dp = Dispatcher(data_base=data_base_controller, storage=storage)
     # dp: Dispatcher = Dispatcher()
     dp.include_router(command_handlers.router)
     dp.include_router(deep_process_new.router)
