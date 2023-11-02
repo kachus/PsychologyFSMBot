@@ -383,9 +383,13 @@ def choose_gender_kb():
     return kb_builder.as_markup()
 
 
-
 def back_to_menu():
     kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     button: InlineKeyboardButton = InlineKeyboardButton(text='Дальше', callback_data='male')
     kb_builder.row(button)
     return kb_builder.as_markup()
+
+def tell_own_struggles_kb(belief_id):
+    kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    button_process: InlineKeyboardButton = InlineKeyboardButton(text='Проработать загон', callback_data=StartBeliefsFactory(belief_id=belief_id).pack())
+    button_menu: InlineKeyboardButton = InlineKeyboardButton(text='Вернуться в главное меню', callback_data='male')
