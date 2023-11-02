@@ -92,10 +92,11 @@ def create_define_way(database: MongoDataBaseRepositoryInterface, user_telegram_
                                                  callback_data='chose_old_beliefs')
         # show_statistic = InlineKeyboardButton(text=f"{LEXICON_RU['show_statistic']}", callback_data='show_statistic')
         kp_builder.row(tell_beliefs, chose_new_beliefs, width=2)
-        # kp_builder.row(chose_old_beliefs, show_statistic, width=1)
+        kp_builder.row(chose_old_beliefs, width=1)
         return kp_builder.as_markup()
 
     is_belief = database.client_repository.check_clients_belief_in_database(user_telegram_id)
+    print()
     return return_keyboard_for_existing_user() if is_belief else return_keyboard_for_new_user()
 
 
@@ -170,9 +171,6 @@ def crete_category_keyboard(data_base_controller: MongoDataBaseRepositoryInterfa
     kp_builder.row(tell_beliefs, width=1)
     kp_builder.row(back, width=1)
     return kp_builder.as_markup()
-
-
-
 
 
 def crete_category_keyboard_chose_belief_for_man(data_base_controller: MongoDataBaseRepositoryInterface):
@@ -284,7 +282,6 @@ def crete_keyboard_chose_existing_belief_for_man(user_telegram_id: int,
     # Из за ограничения в 64 символа передаю только id загона. по этому id можно извлечь название из базы
     kp_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     # Исключаем дубликаты
-    print()
     beliefs: list = list(data_base_controller.client_repository.get_all_existing_beliefs_from_user_by_id(
         user_telegram_id=user_telegram_id))
     for belief in beliefs:
@@ -332,3 +329,16 @@ def back_to_menu():
     button: InlineKeyboardButton = InlineKeyboardButton(text='Дальше', callback_data='male')
     kb_builder.row(button)
     return kb_builder.as_markup()
+
+
+def own_struggle_next_step(belief_id):
+    kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    back_to_main_menu: InlineKeyboardButton = InlineKeyboardButton(text='В главное меню', callback_data='male')
+    work_on_belief: InlineKeyboardButton = InlineKeyboardButton(text='Проработать этот загон сейчас',
+                                                                callback_data=StartBeliefsFactory(
+                                                                    belief_id=belief_id
+                                                                ).pack())
+    kb_builder.row(back_to_main_menu, work_on_belief)
+    kb_builder.adjust(2)
+    return kb_builder.as_markup()
+

@@ -34,6 +34,7 @@ class Problem(Document):
     category_ru = StringField()
     category_id = StringField()
     sex = StringField()
+    creator = IntField()
 
     meta = {
         'collection': 'Problems'  # Здесь указывается имя коллекции

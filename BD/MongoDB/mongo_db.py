@@ -1,4 +1,4 @@
-
+import random
 from datetime import datetime
 from mongoengine import connect, DoesNotExist
 from BD.DBinterface import ClientRepository, ProblemsRepository, MongoDataBaseRepositoryInterface
@@ -6,12 +6,16 @@ from BD.MongoDB.datat_enteties import Belief, Dialog
 from BD.MongoDB.mongo_enteties import Client, Problem
 from config_data.config import MongoDB
 
+
 # TODO: Сюда можно всунуть пораждающий класс ( фабрика ) для создания конекта в зависимости от того где запущен бот ( докер, локал, сервер)
 class MongoORMConnection:
     def __init__(self, mongo: MongoDB):
+        # connect(db=mongo.bd_name,
+        #         host=mongo.docker_host,
+        #         port=int(mongo.docker_port))
         connect(db=mongo.bd_name,
-                host=mongo.docker_host,
-                port=int(mongo.docker_port))
+                host=mongo.local_host,
+                port=int(mongo.local_port))
 
 
 class MongoClientUserRepositoryORM(ClientRepository):
@@ -21,7 +25,7 @@ class MongoClientUserRepositoryORM(ClientRepository):
         user.save()
         print(f"пользователь c id: {Client.id}\nзанесен в базу \n {Client.objects}")
 
-    @staticmethod #fixme
+    @staticmethod  # fixme
     def update_gender(user_id: int, gender: str) -> None:
         user_to_update = Client.objects(telegram_id=user_id).get()
         user_to_update.gender = gender
@@ -32,8 +36,9 @@ class MongoClientUserRepositoryORM(ClientRepository):
     def get_user_gender(user_telegram_id: int) -> str:
         user = Client.objects(telegram_id=user_telegram_id).get()
         gender = user.gender
-        print('пол того кто прорабатывает:', gender )
+        print('пол того кто прорабатывает:', gender)
         return gender
+
     @staticmethod
     def save_all_client_answers_by_id(user_telegram_id: int, answers: dict) -> None:
         user_to_update = Client.objects(telegram_id=user_telegram_id).get()
@@ -149,18 +154,18 @@ class MongoClientUserRepositoryORM(ClientRepository):
 
 class MongoProblemsRepositoryORM(ProblemsRepository):
     def get_man_problems(self) -> list[Problem]:
-        return Problem.objects(sex="man")
+        return Problem.objects(sex="man", category_id__ne='costume')
 
     @staticmethod
     def get_man_problems_by_category(category_name_id: str) -> list[Problem]:
         return Problem.objects(sex="man", category_id=category_name_id)
 
     def get_woman_problems(self) -> list[Problem]:
-        return Problem.objects(sex="woman")
+        return Problem.objects(sex="woman", category_id__ne='costume')
 
     @staticmethod
     def get_woman_problems_by_category(category_name_id: str) -> list[Problem]:
-        return Problem.objects(sex='woman', category_id = category_name_id)
+        return Problem.objects(sex='woman', category_id=category_name_id)
 
     @staticmethod
     def get_problem_by_problem_id(belief_id: int) -> Problem:
@@ -169,6 +174,35 @@ class MongoProblemsRepositoryORM(ProblemsRepository):
         """
         print(Problem.objects(belief_id=belief_id).get())
         return Problem.objects(belief_id=belief_id).get()
+
+    def create_own_problem(self, telegram_id, belief, gender: str)->int:
+        """
+        Функция сохраняет новый загон в базе данных для конкретного пользователя
+        """
+        new_id: int = self._compute_new_id()
+        new_problem = Problem(
+            belief_id=new_id,
+            belief=belief,
+            category_ru='Свой',
+            category_id='costume',
+            sex=gender,
+            creator=telegram_id,
+        )
+        new_problem.save()
+        print(new_problem)
+        return new_id
+
+    @staticmethod
+    def _compute_new_id() -> int:
+        """
+        Создает новый ID
+        """
+        print()
+        existing_id = [problem.belief_id for problem in Problem.objects]
+        new_id = random.randint(1000, 9999999)
+        while new_id in existing_id:
+            new_id = random.randint(1000, 9999999)
+        return new_id
 
 
 class MongoDataBaseRepository(MongoDataBaseRepositoryInterface):
@@ -183,3 +217,4 @@ class MongoDataBaseRepository(MongoDataBaseRepositoryInterface):
 
     def problem_repository(self):
         return self.problem_repository
+

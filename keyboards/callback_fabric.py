@@ -18,8 +18,7 @@ class StartBeliefsFactory(CallbackData, prefix='start_belief'):
     belief_id: int
 
 
-class ExistingBeliefsCallbackFactory(CallbackData, prefix='chose_existed_beliefs'):
+class ExistingBeliefsCallbackFactory(CallbackData, prefix='exist_belief'):
     belief_id: int
     category_id: str
-    sex: str
     category_name_ru: str

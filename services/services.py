@@ -11,6 +11,8 @@ from BD.MongoDB.mongo_enteties import Client
 from aiogram.types import Message
 from aiogram import Bot
 from pydub import AudioSegment
+
+from container import root_dir
 from lexicon.lexicon_ru import LEXICON_RU
 
 
@@ -45,10 +47,10 @@ async def save_answer(message: Message,
               f" {message.from_user.first_name} \n{message.chat.id} "
               f"\nСохранен в базу даных ")
     except Exception as e:
-        print(e.message, "\n что то пошло не так при сохранении ответа")
+        print("\n что то пошло не так при сохранении ответа")
 
 
-async def load_voice_messages(message: Message, bot: Bot, root_dir:str):
+async def load_voice_messages(message: Message, bot: Bot):
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
     file_path = file.file_path

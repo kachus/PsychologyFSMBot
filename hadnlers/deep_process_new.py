@@ -10,7 +10,7 @@ from aiogram.types import (
     CallbackQuery, FSInputFile
 )
 
-from container import root_dir
+
 from keyboards.callback_fabric import StartBeliefsFactory
 
 from BD.MongoDB.datat_enteties import Dialog, DialogMessage, PassingPeriod
@@ -76,6 +76,7 @@ async def start_practise(callback: CallbackQuery,
                          data_base,
                          state: FSMContext):
     # получаем пол пользователя из базы данных
+    print()
     gender = data_base.client_repository.get_user_gender(user_telegram_id=callback.message.chat.id)
     measure_time = PassingPeriod(
         start_time=datetime.datetime.now().time().strftime("%H:%M:%S")
@@ -163,7 +164,7 @@ async def process_audio_response(message: Message,
     data = await state.get_data()
     gender = data['gender']
 
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     await add_dialog_data(state,
                           message_time=message.date,
                           bot_question=LEXICON_RU.get(gender, 'key error').get('remember_struggle', 'key error'),
@@ -202,7 +203,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.struggle_details_continue)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     # Добовляем в стейт данные
     await add_dialog_data(state,
                           message_time=message.date,
@@ -265,7 +266,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.emotions_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
 
     # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
@@ -311,7 +312,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.body_feelings_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
 
@@ -352,7 +353,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.emotion_visualization_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
 
     # FIXME добавить апдейт в бд текст из аудио
     await add_dialog_data(state,
@@ -392,7 +393,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.question_root_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -431,7 +432,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.find_root_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
 
@@ -494,7 +495,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.destroy_emotion_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -535,7 +536,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.root_event_contine)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
     "update data in db"
 
@@ -553,7 +554,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.child_figure_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -618,7 +619,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.child_figure_continue_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -634,7 +635,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.parent_figure_continue_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     print(speech_to_voice_with_path(file_path=str(file_on_disk)))  # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -702,7 +703,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.dialogue_conclusion_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
 
     await add_dialog_data(state,
                           message_time=message.date,
@@ -741,7 +742,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.peace_between_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     # FIXME добавить апдейт в бд текст из аудио
 
     await add_dialog_data(state,
@@ -782,7 +783,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_belife_deeper_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
 
     await add_dialog_data(state,
                           message_time=message.date,
@@ -827,7 +828,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_beliefe_upper_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -866,7 +867,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_beliefe_upper_state_continue)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     "update data in db"
 
     await add_dialog_data(state,
@@ -905,7 +906,7 @@ async def process_struggle_continue(message: Message,
                                     bot: Bot,
                                     data_base):
     await state.set_state(FSMQuestionForm.new_believe_formualtion_state)
-    file_on_disk = await load_voice_messages(message, bot, root_dir)
+    file_on_disk = await load_voice_messages(message, bot, )
     await add_dialog_data(state,
                           message_time=message.date,
                           user_answer=speech_to_voice_with_path(file_path=file_on_disk.as_posix()),
@@ -943,7 +944,7 @@ async def process_message(message: Message,
                           data_base, ):
     if message.content_type in ['audio', 'voice']:
 
-        file_on_disk = await load_voice_messages(message, bot, root_dir)
+        file_on_disk = await load_voice_messages(message, bot, )
         await add_dialog_data(state,
                               message_time=message.date,
                               bot_question='Отзыв',

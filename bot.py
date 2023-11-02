@@ -17,13 +17,15 @@ async def main():
 
     # info about starting the bot
     logger.info('Starting bot')
-    redis = Redis(host=config.redis_storage.docker_host,
+    redis = Redis(host=config.redis_storage.local_host,
                   port=config.redis_storage.docker_port)
+    # redis = Redis(host=config.redis_storage.docker_host,
+    #               port=config.redis_storage.docker_port)
     storage: RedisStorage = RedisStorage(redis=redis)
 
     bot: Bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 
-    dp = Dispatcher(data_base=data_base_controller, storage=storage)
+    dp = Dispatcher(data_base=data_base_controller)
     # dp: Dispatcher = Dispatcher()
     dp.include_router(command_handlers.router)
     dp.include_router(deep_process_new.router)
