@@ -10,12 +10,12 @@ from config_data.config import MongoDB
 # TODO: Сюда можно всунуть пораждающий класс ( фабрика ) для создания конекта в зависимости от того где запущен бот ( докер, локал, сервер)
 class MongoORMConnection:
     def __init__(self, mongo: MongoDB):
-        # connect(db=mongo.bd_name,
-        #         host=mongo.docker_host,
-        #         port=int(mongo.docker_port))
         connect(db=mongo.bd_name,
-                host=mongo.local_host,
-                port=int(mongo.local_port))
+                host=mongo.docker_host,
+                port=int(mongo.docker_port))
+        # connect(db=mongo.bd_name,
+        #         host=mongo.local_host,
+        #         port=int(mongo.local_port))
 
 
 class MongoClientUserRepositoryORM(ClientRepository):
