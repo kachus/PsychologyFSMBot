@@ -452,4 +452,3 @@ async def process_message(message: Message,
     kb = create_futher_kb()
     await bot.send_message(chat_id=message.chat.id,
                            text=LEXICON_RU['find_reason'])
-

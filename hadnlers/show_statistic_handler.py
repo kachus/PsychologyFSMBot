@@ -8,11 +8,7 @@ from aiogram.types import Message, CallbackQuery
 
 from BD.DBinterface import MongoDataBaseRepositoryInterface
 
-from keyboards.callback_fabric import CategoryBeliefsCallbackFactory, CommonBeliefsCallbackFactory, \
-    ExistingBeliefsCallbackFactory
-from keyboards.inline_keyboards import create_define_way, \
-    crete_category_keyboard_chose_belief_for_man, crete_keyboard_chose_belief_for_man, create_start_practice_kb, \
-    crete_keyboard_chose_existing_belief_for_man
+
 
 from aiogram import Bot, F, Router
 
