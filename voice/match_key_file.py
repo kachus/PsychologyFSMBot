@@ -5,7 +5,7 @@ from container import root_dir
 
 # это скрипт для моей директории и мак системы (не удаляй!!!) ок ))
 
-# def get_file_path(key: str, voices_path='/Users/evgenia/PycharmProjects/PsychologyBot copy/voice/voice_new'):
+# def get_file_path(key: str, voices_path='/Users/evgenia/PycharmProjects/PsychologyFSMBot/voice/voice_new'):
 #     files = os.listdir(voices_path)
 #     pattern = re.compile(re.escape(key) + r'.mp3$', re.IGNORECASE)
 #     for file in files:

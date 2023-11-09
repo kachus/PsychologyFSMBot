@@ -29,7 +29,7 @@ def create_problem_chose_keyboard_women(data_base_controller: MongoDataBaseRepos
     buttons = []
     for button in problems:
         buttons.append(InlineKeyboardButton(
-            text=f'{str(button.belief).strip()[:30]}...',
+            text=f'{str(button.belief).strip()[:30]}',
             callback_data=str(button.belief).strip()[:30]  # callback data can be changed
         ))
 
@@ -43,7 +43,7 @@ def create_problem_chose_keyboard(data_base_controller: MongoDataBaseRepositoryI
     buttons = []
     for button in problems:
         buttons.append(InlineKeyboardButton(
-            text=f'{str(button.belief).strip()[:30]}...',
+            text=f'{str(button.belief).strip()[:30]}',
             callback_data=str(button.belief).strip()[:30]  # callback data can be changed
         ))
 
@@ -65,7 +65,7 @@ def create_problem_chose(data_base_controller: MongoDataBaseRepositoryInterface,
     buttons = []
     for button in problems:
         buttons.append(InlineKeyboardButton(
-            text=f'{str(button.belief).strip()[:30]}...',
+            text=f'{str(button.belief).strip()[:30]}',
             callback_data=str(button.belief).strip()[:30]  # callback data can be changed
         ))
 
@@ -114,7 +114,7 @@ def create_keyboard_chose_belief(category: str,
             category_name_id=category)  # filtering data by received category
     for problem in problems:
         kp_builder.button(
-            text=f'{str(problem.belief).strip()[:30]}...',
+            text=f'{str(problem.belief).strip()[:30]}',
             callback_data=CommonBeliefsCallbackFactory(
                 belief_id=str(problem.belief_id).strip()[:10],
                 category_id=problem.category_id,
@@ -124,7 +124,7 @@ def create_keyboard_chose_belief(category: str,
         )
     # for problem in problems:
     #     kp_builder.button(
-    #         text=f'{str(problem.belief).strip()[:30]}...',
+    #         text=f'{str(problem.belief).strip()[:30]}',
     #         callback_data=CommonBeliefsCallbackFactory(
     #             belief_id=problem.belief_id,
     #             category_id=problem.category_id,
@@ -237,7 +237,7 @@ def crete_keyboard_chose_belief_for_man(category: str,
         category_name_id=category)  # filtering data by received category
     for problem in problems:
         kp_builder.button(
-            text=f'{str(problem.belief).strip()[:30]}...',
+            text=f'{str(problem.belief).strip()[:30]}',
             callback_data=CommonBeliefsCallbackFactory(
                 belief_id=problem.belief_id,
                 category_id=problem.category_id,
@@ -261,7 +261,7 @@ def crete_keyboard_chose_belief_for_woman(category: str,
         category_name_id=category)  # filtering data by received category
     for problem in problems:
         kp_builder.button(
-            text=f'{str(problem.belief).strip()[:30]}...',
+            text=f'{str(problem.belief).strip()[:30]}',
             callback_data=CommonBeliefsCallbackFactory(
                 belief_id=problem.belief_id,
                 category_id=problem.category_id,
@@ -286,7 +286,7 @@ def crete_keyboard_chose_existing_belief_for_man(user_telegram_id: int,
         user_telegram_id=user_telegram_id))
     for belief in beliefs:
         kp_builder.button(
-            text=f'{str(belief["belief"].belief).strip()[:30]}...',
+            text=f'{str(belief["belief"].belief).strip()[:30]}',
             callback_data=ExistingBeliefsCallbackFactory(
                 belief_id=belief["belief"].belief_id,
                 category_id=belief["belief"].category_id,

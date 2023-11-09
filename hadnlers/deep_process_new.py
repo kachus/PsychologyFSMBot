@@ -86,7 +86,7 @@ async def start_practise(callback: CallbackQuery,
         conversation_date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         messages=[],
         executed_time=measure_time
-    )
+    ).to_dict()
     kb = create_futher_kb()
     dialog.messages.append(DialogMessage(
         number=len(dialog.messages) + 1,
