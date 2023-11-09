@@ -1,13 +1,15 @@
 version: '3.8'
+
 services:
   telegram_bot:
     build: .
     volumes:
-      -  /root/PsychologyFSMBot:/PsychologyFSMBot
+      - /root/PsychologyFSMBot:/PsychologyFSMBot
     depends_on:
       - mongo
       - redis
     restart: always
+
   mongo:
     image: mongo
     ports:
@@ -16,10 +18,10 @@ services:
     volumes:
       - /root/PsychologyFSMBot/BD/MongoDB/data:/PsychologyFSMBot/BD/MongoDB/data
 
-    redis:
-      image: redis
-      ports:
-        - "9091:6379"
-      restart: always
-      volumes:
-        - /root/PsychologyFSMBot/BD/Redis/data:/PsychologyFSMBot/BD/Redis/data
+  redis:
+    image: redis
+    ports:
+      - "9091:6379"
+    restart: always
+    volumes:
+      - /root/PsychologyFSMBot/BD/Redis/data:/PsychologyFSMBot/BD/Redis/data
