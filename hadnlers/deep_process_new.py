@@ -88,7 +88,7 @@ async def start_practise(callback: CallbackQuery,
         executed_time=measure_time
     ).to_dict()
     kb = create_futher_kb()
-    dialog.messages.append(DialogMessage(
+    dialog['messages'].append(DialogMessage(
         number=len(dialog.messages) + 1,
         time=callback.message.date.time().strftime("%H:%M:%S"),
         bot_question=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
