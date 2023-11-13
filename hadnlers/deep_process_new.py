@@ -94,7 +94,7 @@ async def start_practise(callback: CallbackQuery,
         bot_question=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),
         # bot_question=LEXICON_RU.get(gender.get(['prepare_for_practice']),'key error'),
         step=str(await state.get_state())
-    ))
+    ).to_dict())
 
     await bot.send_voice(voice=FSInputFile(get_file_path('prepare_for_practice')), chat_id=callback.from_user.id,
                          caption=LEXICON_RU.get(gender, 'key error').get('prepare_for_practice', 'key error'),

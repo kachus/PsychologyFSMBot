@@ -29,6 +29,9 @@ class DialogMessage:
     user_answer: Optional[str] = None
     step: Optional[str] = None
 
+    def to_dict(self):
+        return asdict(self)
+
 
 @dataclass
 class Dialog:
