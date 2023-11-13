@@ -100,7 +100,7 @@ async def process_tell_beliefs_command(callback: CallbackQuery,
                                        data_base,
                                        state: FSMContext):
     await bot.send_message(chat_id=callback.message.chat.id,
-                           text='Расскажи свой загон! Ты можешь сделать это текстом, а также можешь записать'
+                           text='Расскажи свой загон! Ты можешь сделать это текстом, а также можешь записать '
                                 'аудио сообщение.')
     await state.set_state(FSMCommonCommands.own_struggle)
 
